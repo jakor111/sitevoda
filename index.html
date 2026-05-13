@@ -1,26 +1,18 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-  const firebaseConfig = {
-    apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-    authDomain: "site-voda-vkr.firebaseapp.com",
-    projectId: "site-voda-vkr",
-    storageBucket: "site-voda-vkr.firebasestorage.app",
-    messagingSenderId: "984009319014",
-    appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-  };
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Система мониторинга качества воды</title>
+  
+  <!-- Chart.js для графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Firebase SDK (Compat версия для статического хостинга) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
   <style>
     :root { --primary: #2563eb; --success: #16a34a; --warning: #ca8a04; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
@@ -32,7 +24,7 @@
     .btn-primary { background: var(--primary); color: white; }
     .btn-danger { background: var(--danger); color: white; }
     .btn-success { background: var(--success); color: white; }
-    input { width: 100%; padding: 0.75rem; margin: 0.5rem 0; border: 1px solid #cbd5e1; border-radius: 6px; }
+    input, select { width: 100%; padding: 0.75rem; margin: 0.5rem 0; border: 1px solid #cbd5e1; border-radius: 6px; }
     .hidden { display: none !important; }
     .status { padding: 0.5rem 1rem; border-radius: 6px; color: white; display: inline-block; margin-bottom: 0.5rem; }
     .status.normal { background: var(--success); }
@@ -45,7 +37,7 @@
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
     th, td { padding: 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
     .chart-container { position: relative; height: 300px; margin: 1rem 0; }
-    #auth-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+    #auth-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; }
   </style>
 </head>
@@ -60,13 +52,13 @@
   </header>
 
   <div class="container">
-    <!-- Авторизация -->
+    <!-- Модальное окно авторизации -->
     <div id="auth-modal" class="hidden">
       <div class="modal-content">
         <h3 id="auth-title">Вход в систему</h3>
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Пароль">
-        <select id="role-select" class="hidden" style="width:100%; padding:0.75rem; margin:0.5rem 0; border-radius:6px; border:1px solid #cbd5e1;">
+        <select id="role-select" class="hidden">
           <option value="user">Пользователь</option>
           <option value="admin">Администратор</option>
         </select>
@@ -115,34 +107,30 @@
     </div>
   </div>
 
-  <!-- Firebase SDK (Compat для статического хостинга) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
   <script>
-    // 🔧 1. КОНФИГУРАЦИЯ FIREBASE (ЗАМЕНИТЕ НА СВОИ ДАННЫЕ)
+    // 🔥 ВАШ FIREBASE CONFIG (уже вставлен)
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "SENDER_ID",
-      appId: "APP_ID"
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrLqVoez3PjiLUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.appspot.com",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
     };
+
+    // 🔹 Инициализация Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // 📊 2. ЭМУЛЯТОР ДАННЫХ (на основе ваших работ)
+    // 📊 ЭМУЛЯТОР ДАННЫХ
     let emulatorInterval = null;
     const waterbody = "Нижний фермский пруд";
     
     function generateReading() {
-      // Диапазоны из статей: pH 6.5-8.5, T 1.8-25, Nitrates 4-25, COD 10-36, Phosphates 0.1-1.6
       const t = new Date();
-      const month = t.getMonth(); // сезонность
-      const seasonalShift = Math.sin((month - 4) * Math.PI / 6) * 2; // пик летом
+      const month = t.getMonth();
+      const seasonalShift = Math.sin((month - 4) * Math.PI / 6) * 2;
       
       return {
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -154,7 +142,6 @@
         cod: 15 + (Math.random() * 21),
         transparency: 30 + (Math.random() * 20),
         phytoplankton: 20 + (Math.random() * 60),
-        // Тяжёлые металлы (мкг/л) из работы Малыгина и др.
         heavy_metals: { Cu: 1 + Math.random()*10, Ni: 2 + Math.random()*15, Co: 0.5 + Math.random()*3 }
       };
     }
@@ -167,7 +154,7 @@
         await db.collection('water_readings').add(data);
         updateAdminCharts(data);
         addUserTableRow(data);
-      }, 5000); // каждые 5 секунд
+      }, 5000);
     }
 
     function stopEmulator() {
@@ -176,10 +163,14 @@
       document.getElementById('btn-stop').classList.add('hidden');
     }
 
-    // 🎛 3. АДМИН-ПАНЕЛЬ
+    // 🎛 АДМИН-ПАНЕЛЬ: Графики
     const charts = {};
     function initCharts() {
-      const config = (label, color) => ({ type: 'line', data: { labels: [], datasets: [{ label, data: [], borderColor: color, tension: 0.3, fill: false }] }, options: { responsive: true, maintainAspectRatio: false } });
+      const config = (label, color) => ({
+        type: 'line',
+        data: { labels: [], datasets: [{ label, data: [], borderColor: color, tension: 0.3, fill: false }] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
       charts.temp = new Chart(document.getElementById('chart-temp'), config('Температура (°C)', '#ef4444'));
       charts.ph = new Chart(document.getElementById('chart-ph'), config('pH', '#3b82f6'));
       charts.nitrates = new Chart(document.getElementById('chart-nitrates'), config('Нитраты (мг/л)', '#10b981'));
@@ -192,7 +183,10 @@
         const chart = charts[key];
         chart.data.labels.push(time);
         chart.data.datasets[0].data.push(key === 'temp' ? data.temp : data[key]);
-        if(chart.data.labels.length > 20) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+        if(chart.data.labels.length > 20) {
+          chart.data.labels.shift();
+          chart.data.datasets[0].data.shift();
+        }
         chart.update();
       });
     }
@@ -206,12 +200,12 @@
       if(tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
     }
 
-    // 👤 4. ПОЛЬЗОВАТЕЛЬСКАЯ ПАНЕЛЬ & ПРОВЕРКА НОРМ
+    // 👤 ПОЛЬЗОВАТЕЛЬСКАЯ ПАНЕЛЬ: Проверка норм
     const thresholds = {
-      ph: { min: 6.5, max: 8.5, norm: 'pH в норме', warn: 'Кислотность отклоняется от нормы', crit: 'Критическое значение pH' },
-      nitrates: { min: 0, max: 45, norm: 'Нитраты в пределах ПДК', warn: 'Повышенное содержание нитратов', crit: 'Опасное превышение нитратов' },
-      cod: { min: 0, max: 15, norm: 'ХПК в норме', warn: 'Высокая органическая нагрузка', crit: 'Сильное загрязнение органикой' },
-      phosphates: { min: 0, max: 3.5, norm: 'Фосфаты в норме', warn: 'Риск эвтрофикации', crit: 'Критический уровень фосфатов' }
+      ph: { min: 6.5, max: 8.5, norm: 'pH в норме', warn: 'Кислотность отклоняется', crit: 'Критическое значение pH' },
+      nitrates: { min: 0, max: 45, norm: 'Нитраты в пределах ПДК', warn: 'Повышенное содержание', crit: 'Опасное превышение' },
+      cod: { min: 0, max: 15, norm: 'ХПК в норме', warn: 'Высокая органическая нагрузка', crit: 'Сильное загрязнение' },
+      phosphates: { min: 0, max: 3.5, norm: 'Фосфаты в норме', warn: 'Риск эвтрофикации', crit: 'Критический уровень' }
     };
 
     function checkStatus(data) {
@@ -219,9 +213,15 @@
       const params = [];
       for(const [key, rule] of Object.entries(thresholds)) {
         const val = data[key];
-        if(val > rule.max) { overall = overall === 'normal' ? 'warning' : overall; params.push({ key, status: 'crit', msg: rule.crit }); }
-        else if(val < rule.min || val > rule.max * 0.8) { overall = overall === 'normal' ? 'warning' : overall; params.push({ key, status: 'warn', msg: rule.warn }); }
-        else { params.push({ key, status: 'normal', msg: rule.norm }); }
+        if(val > rule.max) {
+          overall = overall === 'normal' ? 'warning' : overall;
+          params.push({ key, status: 'crit', msg: rule.crit });
+        } else if(val < rule.min || val > rule.max * 0.8) {
+          overall = overall === 'normal' ? 'warning' : overall;
+          params.push({ key, status: 'warn', msg: rule.warn });
+        } else {
+          params.push({ key, status: 'normal', msg: rule.norm });
+        }
       }
       return { overall, params };
     }
@@ -229,29 +229,39 @@
     function renderUserView(data) {
       const { overall, params } = checkStatus(data);
       document.getElementById('user-status').className = `status ${overall}`;
-      document.getElementById('user-status').textContent = overall === 'normal' ? '✅ Вода соответствует нормативам' : '⚠️ Обнаружены отклонения от норм';
+      document.getElementById('user-status').textContent = overall === 'normal' 
+        ? '✅ Вода соответствует нормативам' 
+        : '⚠️ Обнаружены отклонения от норм';
       
       const grid = document.getElementById('user-params');
-      grid.innerHTML = params.map(p => `<div class="param-card ${p.status}"><strong>${p.key.toUpperCase()}</strong><br>${p.msg}</div>`).join('');
+      grid.innerHTML = params.map(p => 
+        `<div class="param-card ${p.status}"><strong>${p.key.toUpperCase()}</strong><br>${p.msg}</div>`
+      ).join('');
       
       const recs = [];
       if(overall !== 'normal') {
-        if(params.some(p => p.key === 'nitrates' && p.status !== 'normal')) recs.push('Установить фильтр обратного осмоса или систему денитрификации.');
-        if(params.some(p => p.key === 'cod' && p.status !== 'normal')) recs.push('Провести аэрацию воды, проверить источники органических стоков.');
-        if(params.some(p => p.key === 'phosphates' && p.status !== 'normal')) recs.push('Ограничить внесение удобрений вблизи водоёма, рассмотреть сорбционные фильтры.');
+        if(params.some(p => p.key === 'nitrates' && p.status !== 'normal')) 
+          recs.push('Установить фильтр обратного осмоса или систему денитрификации.');
+        if(params.some(p => p.key === 'cod' && p.status !== 'normal')) 
+          recs.push('Провести аэрацию воды, проверить источники органических стоков.');
+        if(params.some(p => p.key === 'phosphates' && p.status !== 'normal')) 
+          recs.push('Ограничить внесение удобрений вблизи водоёма, рассмотреть сорбционные фильтры.');
       } else {
         recs.push('Продолжать регулярный мониторинг. Вода безопасна для хозяйственно-бытового использования.');
       }
       document.getElementById('recommendations').innerHTML = recs.map(r => `<li>${r}</li>`).join('');
     }
 
-    // 🔐 5. АВТОРИЗАЦИЯ & РОУТИНГ
+    // 🔐 АВТОРИЗАЦИЯ & РОУТИНГ
     let isLogin = true;
     const modal = document.getElementById('auth-modal');
+    
     document.getElementById('btn-login').onclick = () => modal.classList.remove('hidden');
     document.getElementById('close-modal').onclick = () => modal.classList.add('hidden');
+    
     document.getElementById('auth-switch-link').onclick = (e) => {
-      e.preventDefault(); isLogin = !isLogin;
+      e.preventDefault();
+      isLogin = !isLogin;
       document.getElementById('auth-title').textContent = isLogin ? 'Вход в систему' : 'Регистрация';
       document.getElementById('auth-action').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
       document.getElementById('auth-switch-text').textContent = isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?';
@@ -264,13 +274,20 @@
       const pass = document.getElementById('password').value;
       const role = document.getElementById('role-select').value;
       try {
-        if(isLogin) { await auth.signInWithEmailAndPassword(email, pass); }
-        else {
+        if(isLogin) {
+          await auth.signInWithEmailAndPassword(email, pass);
+        } else {
           const cred = await auth.createUserWithEmailAndPassword(email, pass);
-          await db.collection('users').doc(cred.user.uid).set({ email, role, createdAt: new Date() });
+          await db.collection('users').doc(cred.user.uid).set({ 
+            email, 
+            role, 
+            createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+          });
         }
         modal.classList.add('hidden');
-      } catch(e) { alert(e.message); }
+      } catch(e) {
+        alert('Ошибка: ' + e.message);
+      }
     };
 
     document.getElementById('btn-logout').onclick = () => auth.signOut();
@@ -284,6 +301,7 @@
         stopEmulator();
         return;
       }
+      
       document.getElementById('btn-login').classList.add('hidden');
       document.getElementById('header-controls').classList.remove('hidden');
       
@@ -294,24 +312,38 @@
       document.getElementById('user-view').classList.toggle('hidden', role !== 'user');
       document.getElementById('admin-view').classList.toggle('hidden', role !== 'admin');
       
-      if(role === 'admin') { initCharts(); startEmulator(); loadAdminHistory(); }
-      else { loadUserLatest(); }
+      if(role === 'admin') {
+        initCharts();
+        startEmulator();
+        loadAdminHistory();
+      } else {
+        loadUserLatest();
+      }
     });
 
     // Загрузка истории для админа
     function loadAdminHistory() {
-      db.collection('water_readings').orderBy('timestamp', 'desc').limit(15).onSnapshot(snap => {
-        document.querySelector('#data-table tbody').innerHTML = '';
-        snap.forEach(doc => addUserTableRow(doc.data()));
-        snap.forEach(doc => updateAdminCharts(doc.data()));
-      });
+      db.collection('water_readings')
+        .orderBy('timestamp', 'desc')
+        .limit(15)
+        .onSnapshot(snap => {
+          document.querySelector('#data-table tbody').innerHTML = '';
+          snap.forEach(doc => {
+            const data = doc.data();
+            addUserTableRow(data);
+            updateAdminCharts(data);
+          });
+        });
     }
 
     // Загрузка последних данных для пользователя
     function loadUserLatest() {
-      db.collection('water_readings').orderBy('timestamp', 'desc').limit(1).onSnapshot(snap => {
-        if(!snap.empty) renderUserView(snap.docs[0].data());
-      });
+      db.collection('water_readings')
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+        .onSnapshot(snap => {
+          if(!snap.empty) renderUserView(snap.docs[0].data());
+        });
     }
   </script>
 </body>
