@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Система мониторинга качества воды</title>
+  <title>AquaMonitor - Система мониторинга качества воды</title>
   
   <!-- Chart.js для графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -39,11 +39,112 @@
     .chart-container { position: relative; height: 300px; margin: 1rem 0; }
     #auth-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; }
+    
+    /* Стили для главной страницы */
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .hero .water-drop {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.25rem;
+      max-width: 800px;
+      margin: 0 auto 2rem;
+      opacity: 0.95;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .feature-card {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+    }
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .feature-card h3 {
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+      font-size: 1.5rem;
+    }
+    .feature-card p {
+      color: #64748b;
+      line-height: 1.6;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 1rem 2.5rem;
+      background: white;
+      color: var(--primary);
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    .info-section {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-top: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .info-section h2 {
+      color: var(--primary);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .info-section ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .info-section li {
+      padding: 0.5rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+    .info-section li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h2>💧 Мониторинг качества воды</h2>
+    <h2>💧 AquaMonitor</h2>
     <div id="header-controls" class="hidden">
       <span id="user-role"></span>
       <button id="btn-logout" class="btn btn-danger" style="margin-left: 1rem;">Выйти</button>
@@ -52,6 +153,69 @@
   </header>
 
   <div class="container">
+    <!-- Главная страница для неавторизованных пользователей -->
+    <div id="landing-page">
+      <div class="hero">
+        <div class="water-drop">💧</div>
+        <h1>AquaMonitor</h1>
+        <p>Современная система мониторинга и анализа качества воды в водоёмах. 
+           Контролируйте состояние водных ресурсов в реальном времени и получайте рекомендации по улучшению качества воды.</p>
+        <a href="#" class="cta-button" id="hero-login">Начать мониторинг →</a>
+      </div>
+
+      <div class="features">
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Анализ показателей</h3>
+          <p>Отслеживайте ключевые параметры качества воды: pH, нитраты, фосфаты, ХПК и другие показатели в реальном времени</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🗺️</div>
+          <h3>Карта водоёмов</h3>
+          <p>Визуализация данных на интерактивной карте с кластеризацией и детальным описанием каждой точки мониторинга</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📈</div>
+          <h3>Графики и отчёты</h3>
+          <p>Построение графиков изменения параметров, экспорт данных и автоматическая оценка соответствия нормативам</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">💡</div>
+          <h3>Рекомендации</h3>
+          <p>Получайте персонализированные рекомендации по очистке воды и улучшению её качества на основе анализа</p>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h2>🎯 Возможности системы</h2>
+        <div class="grid" style="margin-top: 1.5rem;">
+          <div>
+            <h3 style="color: var(--primary); margin-bottom: 1rem;">Для пользователей:</h3>
+            <ul>
+              <li>Проверка качества воды по вашим данным</li>
+              <li>Автоматическая оценка соответствия нормативам</li>
+              <li>Получение рекомендаций по очистке</li>
+              <li>Просмотр общей статистики по водоёмам</li>
+              <li>Экспорт результатов в PDF/XLSX</li>
+            </ul>
+          </div>
+          <div>
+            <h3 style="color: var(--primary); margin-bottom: 1rem;">Для администраторов:</h3>
+            <ul>
+              <li>Управление данными мониторинга</li>
+              <li>Добавление и редактирование точек отбора проб</li>
+              <li>Просмотр графиков в реальном времени</li>
+              <li>Управление слоями и категориями</li>
+              <li>Импорт данных из Excel</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Модальное окно авторизации -->
     <div id="auth-modal" class="hidden">
       <div class="modal-content">
@@ -108,14 +272,14 @@
   </div>
 
   <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.firebasestorage.app",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+    };
 
     // 🔹 Инициализация Firebase
     firebase.initializeApp(firebaseConfig);
@@ -132,7 +296,7 @@ const firebaseConfig = {
       const seasonalShift = Math.sin((month - 4) * Math.PI / 6) * 2;
       
       return {
-        timestamp: now.getTime(), // Используем локальное время вместо serverTimestamp
+        timestamp: now.getTime(),
         waterbody,
         ph: 7.0 + (Math.random() * 1.5 - 0.75),
         temp: 12 + seasonalShift + (Math.random() * 8 - 4),
@@ -190,13 +354,11 @@ const firebaseConfig = {
       charts.cod = new Chart(document.getElementById('chart-cod'), config('ХПК (мг O₂/л)', '#f59e0b'));
     }
 
-    // Функция для сортировки данных по времени
     function sortByTimestamp(dataArray) {
       return dataArray.sort((a, b) => a.timestamp - b.timestamp);
     }
 
     function updateAdminCharts(newData) {
-      // Получаем все текущие данные из графиков
       let allData = [];
       ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
         if (charts[key].data.labels.length > 0) {
@@ -214,18 +376,13 @@ const firebaseConfig = {
         }
       });
       
-      // Добавляем новые данные
       allData.push(newData);
-      
-      // Сортируем по времени
       allData = sortByTimestamp(allData);
       
-      // Обрезаем до 20 последних записей
       if (allData.length > 20) {
         allData = allData.slice(-20);
       }
       
-      // Обновляем графики
       ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
         const chart = charts[key];
         chart.data.labels = allData.map(item => {
@@ -241,20 +398,16 @@ const firebaseConfig = {
       const tbody = document.querySelector('#data-table tbody');
       const row = document.createElement('tr');
       const status = checkStatus(data).overall;
-      
-      // Форматируем время
       const time = new Date(data.timestamp).toLocaleTimeString('ru-RU');
       
       row.innerHTML = `<td>${time}</td><td>${data.ph.toFixed(2)}</td><td>${data.temp.toFixed(1)}</td><td>${data.nitrates.toFixed(1)}</td><td>${data.cod.toFixed(1)}</td><td><span class="status ${status}">${status}</span></td>`;
       
-      // Вставляем новую строку в начало таблицы (новые данные сверху)
       if (tbody.firstChild) {
         tbody.insertBefore(row, tbody.firstChild);
       } else {
         tbody.appendChild(row);
       }
       
-      // Ограничиваем количество строк
       if(tbody.children.length > 10) {
         tbody.removeChild(tbody.lastChild);
       }
@@ -264,7 +417,7 @@ const firebaseConfig = {
     const thresholds = {
       ph: { min: 6.5, max: 8.5, norm: 'pH в норме', warn: 'Кислотность отклоняется', crit: 'Критическое значение pH' },
       nitrates: { min: 0, max: 45, norm: 'Нитраты в пределах ПДК', warn: 'Повышенное содержание', crit: 'Опасное превышение' },
-      cod: { min: 0, max: 15, norm: 'ХПК в норме', warn: 'Высокая органическая нагрузка', crit: 'Сильное загрязнение' },
+      cod: { min: 0, max: 30, norm: 'ХПК в норме', warn: 'Высокая органическая нагрузка', crit: 'Сильное загрязнение' },
       phosphates: { min: 0, max: 3.5, norm: 'Фосфаты в норме', warn: 'Риск эвтрофикации', crit: 'Критический уровень' }
     };
 
@@ -318,8 +471,13 @@ const firebaseConfig = {
     // 🔐 АВТОРИЗАЦИЯ & РОУТИНГ
     let isLogin = true;
     const modal = document.getElementById('auth-modal');
+    const landingPage = document.getElementById('landing-page');
     
     document.getElementById('btn-login').onclick = () => modal.classList.remove('hidden');
+    document.getElementById('hero-login').onclick = (e) => {
+      e.preventDefault();
+      modal.classList.remove('hidden');
+    };
     document.getElementById('close-modal').onclick = () => modal.classList.add('hidden');
     
     document.getElementById('auth-switch-link').onclick = (e) => {
@@ -340,6 +498,10 @@ const firebaseConfig = {
         if(isLogin) {
           await auth.signInWithEmailAndPassword(email, pass);
         } else {
+          if(pass.length < 6) {
+            alert('Пароль должен быть не менее 6 символов');
+            return;
+          }
           const cred = await auth.createUserWithEmailAndPassword(email, pass);
           await db.collection('users').doc(cred.user.uid).set({ 
             email, 
@@ -349,7 +511,18 @@ const firebaseConfig = {
         }
         modal.classList.add('hidden');
       } catch(e) {
-        alert('Ошибка: ' + e.message);
+        console.error('Ошибка:', e);
+        if(e.code === 'auth/invalid-email') {
+          alert('Неверный формат email');
+        } else if(e.code === 'auth/weak-password') {
+          alert('Пароль слишком слабый (минимум 6 символов)');
+        } else if(e.code === 'auth/email-already-in-use') {
+          alert('Этот email уже зарегистрирован');
+        } else if(e.code === 'auth/invalid-credential') {
+          alert('Неверный email или пароль');
+        } else {
+          alert('Ошибка: ' + e.message);
+        }
       }
     };
 
@@ -359,6 +532,7 @@ const firebaseConfig = {
       if(!user) {
         document.getElementById('btn-login').classList.remove('hidden');
         document.getElementById('header-controls').classList.add('hidden');
+        landingPage.classList.remove('hidden');
         document.getElementById('user-view').classList.add('hidden');
         document.getElementById('admin-view').classList.add('hidden');
         stopEmulator();
@@ -367,6 +541,7 @@ const firebaseConfig = {
       
       document.getElementById('btn-login').classList.add('hidden');
       document.getElementById('header-controls').classList.remove('hidden');
+      landingPage.classList.add('hidden');
       
       const userDoc = await db.collection('users').doc(user.uid).get();
       const role = userDoc.exists ? userDoc.data().role : 'user';
@@ -384,7 +559,6 @@ const firebaseConfig = {
       }
     });
 
-    // Загрузка истории для админа
     function loadAdminHistory() {
       db.collection('water_readings')
         .orderBy('timestamp', 'desc')
@@ -395,23 +569,19 @@ const firebaseConfig = {
             allData.push(doc.data());
           });
           
-          // Сортируем по времени (от старых к новым для графиков)
           const sortedData = sortByTimestamp([...allData]);
           
-          // Обновляем графики
           document.querySelector('#data-table tbody').innerHTML = '';
           sortedData.forEach(data => {
             updateAdminCharts(data);
           });
           
-          // Обновляем таблицу (новые сверху)
           [...allData].reverse().forEach(data => {
             addUserTableRow(data);
           });
         });
     }
 
-    // Загрузка последних данных для пользователя
     function loadUserLatest() {
       db.collection('water_readings')
         .orderBy('timestamp', 'desc')
