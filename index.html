@@ -109,13 +109,13 @@
 
   <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.firebasestorage.app",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+    };
 
     // 🔹 Инициализация Firebase
     firebase.initializeApp(firebaseConfig);
@@ -127,12 +127,12 @@
     const waterbody = "Нижний фермский пруд";
     
     function generateReading() {
-      const t = new Date();
-      const month = t.getMonth();
+      const now = new Date();
+      const month = now.getMonth();
       const seasonalShift = Math.sin((month - 4) * Math.PI / 6) * 2;
       
       return {
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        timestamp: now.getTime(), // Используем локальное время вместо serverTimestamp
         waterbody,
         ph: 7.0 + (Math.random() * 1.5 - 0.75),
         temp: 12 + seasonalShift + (Math.random() * 8 - 4),
@@ -168,7 +168,21 @@
       const config = (label, color) => ({
         type: 'line',
         data: { labels: [], datasets: [{ label, data: [], borderColor: color, tension: 0.3, fill: false }] },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          },
+          animation: {
+            duration: 0
+          }
+        }
       });
       charts.temp = new Chart(document.getElementById('chart-temp'), config('Температура (°C)', '#ef4444'));
       charts.ph = new Chart(document.getElementById('chart-ph'), config('pH', '#3b82f6'));
@@ -176,16 +190,49 @@
       charts.cod = new Chart(document.getElementById('chart-cod'), config('ХПК (мг O₂/л)', '#f59e0b'));
     }
 
-    function updateAdminCharts(data) {
-      const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString() : new Date().toLocaleTimeString();
+    // Функция для сортировки данных по времени
+    function sortByTimestamp(dataArray) {
+      return dataArray.sort((a, b) => a.timestamp - b.timestamp);
+    }
+
+    function updateAdminCharts(newData) {
+      // Получаем все текущие данные из графиков
+      let allData = [];
+      ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
+        if (charts[key].data.labels.length > 0) {
+          for (let i = 0; i < charts[key].data.labels.length; i++) {
+            const timeStr = charts[key].data.labels[i];
+            const timeParts = timeStr.split(':');
+            const now = new Date();
+            const time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 
+                                  parseInt(timeParts[0]), parseInt(timeParts[1]), parseInt(timeParts[2]));
+            allData.push({
+              timestamp: time.getTime(),
+              [key]: charts[key].data.datasets[0].data[i]
+            });
+          }
+        }
+      });
+      
+      // Добавляем новые данные
+      allData.push(newData);
+      
+      // Сортируем по времени
+      allData = sortByTimestamp(allData);
+      
+      // Обрезаем до 20 последних записей
+      if (allData.length > 20) {
+        allData = allData.slice(-20);
+      }
+      
+      // Обновляем графики
       ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
         const chart = charts[key];
-        chart.data.labels.push(time);
-        chart.data.datasets[0].data.push(key === 'temp' ? data.temp : data[key]);
-        if(chart.data.labels.length > 20) {
-          chart.data.labels.shift();
-          chart.data.datasets[0].data.shift();
-        }
+        chart.data.labels = allData.map(item => {
+          const date = new Date(item.timestamp);
+          return date.toLocaleTimeString('ru-RU');
+        });
+        chart.data.datasets[0].data = allData.map(item => item[key]);
         chart.update();
       });
     }
@@ -194,9 +241,23 @@
       const tbody = document.querySelector('#data-table tbody');
       const row = document.createElement('tr');
       const status = checkStatus(data).overall;
-      row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>${data.ph.toFixed(2)}</td><td>${data.temp.toFixed(1)}</td><td>${data.nitrates.toFixed(1)}</td><td>${data.cod.toFixed(1)}</td><td><span class="status ${status}">${status}</span></td>`;
-      tbody.prepend(row);
-      if(tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
+      
+      // Форматируем время
+      const time = new Date(data.timestamp).toLocaleTimeString('ru-RU');
+      
+      row.innerHTML = `<td>${time}</td><td>${data.ph.toFixed(2)}</td><td>${data.temp.toFixed(1)}</td><td>${data.nitrates.toFixed(1)}</td><td>${data.cod.toFixed(1)}</td><td><span class="status ${status}">${status}</span></td>`;
+      
+      // Вставляем новую строку в начало таблицы (новые данные сверху)
+      if (tbody.firstChild) {
+        tbody.insertBefore(row, tbody.firstChild);
+      } else {
+        tbody.appendChild(row);
+      }
+      
+      // Ограничиваем количество строк
+      if(tbody.children.length > 10) {
+        tbody.removeChild(tbody.lastChild);
+      }
     }
 
     // 👤 ПОЛЬЗОВАТЕЛЬСКАЯ ПАНЕЛЬ: Проверка норм
@@ -213,10 +274,10 @@
       for(const [key, rule] of Object.entries(thresholds)) {
         const val = data[key];
         if(val > rule.max) {
-          overall = overall === 'normal' ? 'warning' : overall;
+          overall = 'critical';
           params.push({ key, status: 'crit', msg: rule.crit });
         } else if(val < rule.min || val > rule.max * 0.8) {
-          overall = overall === 'normal' ? 'warning' : overall;
+          if (overall !== 'critical') overall = 'warning';
           params.push({ key, status: 'warn', msg: rule.warn });
         } else {
           params.push({ key, status: 'normal', msg: rule.norm });
@@ -230,7 +291,7 @@
       document.getElementById('user-status').className = `status ${overall}`;
       document.getElementById('user-status').textContent = overall === 'normal' 
         ? '✅ Вода соответствует нормативам' 
-        : '⚠️ Обнаружены отклонения от норм';
+        : (overall === 'warning' ? '⚠️ Обнаружены отклонения от норм' : '❌ Критическое загрязнение воды!');
       
       const grid = document.getElementById('user-params');
       grid.innerHTML = params.map(p => 
@@ -245,6 +306,9 @@
           recs.push('Провести аэрацию воды, проверить источники органических стоков.');
         if(params.some(p => p.key === 'phosphates' && p.status !== 'normal')) 
           recs.push('Ограничить внесение удобрений вблизи водоёма, рассмотреть сорбционные фильтры.');
+        if(overall === 'critical') {
+          recs.unshift('❗ Немедленно прекратите использование воды! Обратитесь в службу экологического контроля.');
+        }
       } else {
         recs.push('Продолжать регулярный мониторинг. Вода безопасна для хозяйственно-бытового использования.');
       }
@@ -326,11 +390,23 @@
         .orderBy('timestamp', 'desc')
         .limit(15)
         .onSnapshot(snap => {
-          document.querySelector('#data-table tbody').innerHTML = '';
+          const allData = [];
           snap.forEach(doc => {
-            const data = doc.data();
-            addUserTableRow(data);
+            allData.push(doc.data());
+          });
+          
+          // Сортируем по времени (от старых к новым для графиков)
+          const sortedData = sortByTimestamp([...allData]);
+          
+          // Обновляем графики
+          document.querySelector('#data-table tbody').innerHTML = '';
+          sortedData.forEach(data => {
             updateAdminCharts(data);
+          });
+          
+          // Обновляем таблицу (новые сверху)
+          [...allData].reverse().forEach(data => {
+            addUserTableRow(data);
           });
         });
     }
@@ -341,7 +417,9 @@
         .orderBy('timestamp', 'desc')
         .limit(1)
         .onSnapshot(snap => {
-          if(!snap.empty) renderUserView(snap.docs[0].data());
+          if(!snap.empty) {
+            renderUserView(snap.docs[0].data());
+          }
         });
     }
   </script>
