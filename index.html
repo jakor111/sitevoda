@@ -8,6 +8,9 @@
   <!-- Chart.js для графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
+  <!-- SheetJS для генерации Excel -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  
   <!-- Firebase SDK (Compat версия для статического хостинга) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -171,6 +174,12 @@
         </div>
         
         <div class="feature-card">
+          <div class="feature-icon">🗺️</div>
+          <h3>Карта водоёмов</h3>
+          <p>Визуализация данных на интерактивной карте с кластеризацией и детальным описанием каждой точки мониторинга</p>
+        </div>
+        
+        <div class="feature-card">
           <div class="feature-icon">📈</div>
           <h3>Графики и отчёты</h3>
           <p>Построение графиков изменения параметров, экспорт данных и автоматическая оценка соответствия нормативам</p>
@@ -193,7 +202,7 @@
               <li>Автоматическая оценка соответствия нормативам</li>
               <li>Получение рекомендаций по очистке</li>
               <li>Просмотр общей статистики по водоёмам</li>
-              <li>Экспорт результатов в PDF/XLSX</li>
+              <li>Экспорт результатов в Excel</li>
             </ul>
           </div>
           <div>
@@ -237,15 +246,17 @@
         <div class="grid" id="user-params"></div>
         <h4 style="margin-top:1.5rem;">💡 Рекомендуемые меры</h4>
         <ul id="recommendations" style="margin-left:1.5rem; margin-top:0.5rem;"></ul>
+        <button id="btn-download-user" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">📥 Скачать данные (Excel)</button>
       </div>
     </div>
 
     <!-- Панель администратора -->
     <div id="admin-view" class="hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
           <h3>📈 Панель администратора</h3>
-          <div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button id="btn-download-admin" class="btn btn-primary">📥 Excel</button>
             <button id="btn-emulator" class="btn btn-success">▶ Запустить эмулятор</button>
             <button id="btn-stop" class="btn btn-danger hidden">⏹ Остановить</button>
           </div>
@@ -266,21 +277,19 @@
   </div>
 
   <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.firebasestorage.app",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+    };
 
-    // 🔹 Инициализация Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // 📊 ЭМУЛЯТОР ДАННЫХ
     let emulatorInterval = null;
     const waterbody = "Нижний фермский пруд";
     
@@ -296,7 +305,7 @@ const firebaseConfig = {
         temp: 12 + seasonalShift + (Math.random() * 8 - 4),
         nitrates: 10 + (Math.random() * 15),
         phosphates: 0.2 + (Math.random() * 1.4),
-        cod: 15 + (Math.random() * 21),
+        cod: 10 + (Math.random() * 10), // Исправлено: реалистичный диапазон 10-20
         transparency: 30 + (Math.random() * 20),
         phytoplankton: 20 + (Math.random() * 60),
         heavy_metals: { Cu: 1 + Math.random()*10, Ni: 2 + Math.random()*15, Co: 0.5 + Math.random()*3 }
@@ -320,7 +329,6 @@ const firebaseConfig = {
       document.getElementById('btn-stop').classList.add('hidden');
     }
 
-    // 🎛 АДМИН-ПАНЕЛЬ: Графики
     const charts = {};
     function initCharts() {
       const config = (label, color) => ({
@@ -329,17 +337,8 @@ const firebaseConfig = {
         options: { 
           responsive: true, 
           maintainAspectRatio: false,
-          scales: {
-            x: {
-              ticks: {
-                maxRotation: 45,
-                minRotation: 45
-              }
-            }
-          },
-          animation: {
-            duration: 0
-          }
+          scales: { x: { ticks: { maxRotation: 45, minRotation: 45 } } },
+          animation: { duration: 0 }
         }
       });
       charts.temp = new Chart(document.getElementById('chart-temp'), config('Температура (°C)', '#ef4444'));
@@ -362,27 +361,17 @@ const firebaseConfig = {
             const now = new Date();
             const time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 
                                   parseInt(timeParts[0]), parseInt(timeParts[1]), parseInt(timeParts[2]));
-            allData.push({
-              timestamp: time.getTime(),
-              [key]: charts[key].data.datasets[0].data[i]
-            });
+            allData.push({ timestamp: time.getTime(), [key]: charts[key].data.datasets[0].data[i] });
           }
         }
       });
-      
       allData.push(newData);
       allData = sortByTimestamp(allData);
-      
-      if (allData.length > 20) {
-        allData = allData.slice(-20);
-      }
+      if (allData.length > 20) allData = allData.slice(-20);
       
       ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
         const chart = charts[key];
-        chart.data.labels = allData.map(item => {
-          const date = new Date(item.timestamp);
-          return date.toLocaleTimeString('ru-RU');
-        });
+        chart.data.labels = allData.map(item => new Date(item.timestamp).toLocaleTimeString('ru-RU'));
         chart.data.datasets[0].data = allData.map(item => item[key]);
         chart.update();
       });
@@ -393,21 +382,12 @@ const firebaseConfig = {
       const row = document.createElement('tr');
       const status = checkStatus(data).overall;
       const time = new Date(data.timestamp).toLocaleTimeString('ru-RU');
-      
       row.innerHTML = `<td>${time}</td><td>${data.ph.toFixed(2)}</td><td>${data.temp.toFixed(1)}</td><td>${data.nitrates.toFixed(1)}</td><td>${data.cod.toFixed(1)}</td><td><span class="status ${status}">${status}</span></td>`;
-      
-      if (tbody.firstChild) {
-        tbody.insertBefore(row, tbody.firstChild);
-      } else {
-        tbody.appendChild(row);
-      }
-      
-      if(tbody.children.length > 10) {
-        tbody.removeChild(tbody.lastChild);
-      }
+      if (tbody.firstChild) tbody.insertBefore(row, tbody.firstChild);
+      else tbody.appendChild(row);
+      if(tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
     }
 
-    // 👤 ПОЛЬЗОВАТЕЛЬСКАЯ ПАНЕЛЬ: Проверка норм
     const thresholds = {
       ph: { min: 6.5, max: 8.5, norm: 'pH в норме', warn: 'Кислотность отклоняется', crit: 'Критическое значение pH' },
       nitrates: { min: 0, max: 45, norm: 'Нитраты в пределах ПДК', warn: 'Повышенное содержание', crit: 'Опасное превышение' },
@@ -462,16 +442,74 @@ const firebaseConfig = {
       document.getElementById('recommendations').innerHTML = recs.map(r => `<li>${r}</li>`).join('');
     }
 
+    // 🔽 ФУНКЦИЯ СКАЧИВАНИЯ EXCEL
+    async function downloadExcelData() {
+      const btns = [document.getElementById('btn-download-user'), document.getElementById('btn-download-admin')];
+      const originalTexts = btns.map(b => b ? b.textContent : '');
+      
+      try {
+        btns.forEach(b => { if(b) { b.textContent = '⏳ Подготовка...'; b.disabled = true; } });
+        
+        const snapshot = await db.collection('water_readings').orderBy('timestamp', 'desc').limit(500).get();
+        if (snapshot.empty) {
+          alert('Нет данных для экспорта. Запустите эмулятор или дождитесь поступления данных.');
+          return;
+        }
+
+        const data = [];
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const statusObj = checkStatus(d);
+          data.push({
+            'Дата и время': d.timestamp ? new Date(d.timestamp).toLocaleString('ru-RU') : 'Нет времени',
+            'Водоём': d.waterbody || 'Не указан',
+            'pH': d.ph?.toFixed(2) || '',
+            'Температура (°C)': d.temp?.toFixed(1) || '',
+            'Нитраты (мг/л)': d.nitrates?.toFixed(1) || '',
+            'Фосфаты (мг/л)': d.phosphates?.toFixed(2) || '',
+            'ХПК (мг O₂/л)': d.cod?.toFixed(1) || '',
+            'Прозрачность (см)': d.transparency?.toFixed(0) || '',
+            'Фитопланктон (мг/л)': d.phytoplankton?.toFixed(0) || '',
+            'Медь Cu (мкг/л)': d.heavy_metals?.Cu?.toFixed(2) || '',
+            'Никель Ni (мкг/л)': d.heavy_metals?.Ni?.toFixed(2) || '',
+            'Кобальт Co (мкг/л)': d.heavy_metals?.Co?.toFixed(2) || '',
+            'Статус': statusObj.overall === 'normal' ? 'Норма' : (statusObj.overall === 'warning' ? 'Отклонение' : 'Критично'),
+            'Рекомендация': statusObj.overall === 'normal' ? 'Продолжать мониторинг' : 'Требуется очистка/контроль'
+          });
+        });
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Мониторинг воды");
+
+        const colWidths = Object.keys(data[0]).map(key => ({
+          wch: Math.max(key.length, ...data.map(row => String(row[key] || '').length)) + 2
+        }));
+        ws['!cols'] = colWidths;
+
+        const fileName = `AquaMonitor_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+      } catch (e) {
+        console.error(e);
+        alert('Ошибка при скачивании: ' + e.message);
+      } finally {
+        btns.forEach((b, i) => { 
+          if(b) { b.textContent = originalTexts[i]; b.disabled = false; } 
+        });
+      }
+    }
+
+    // Привязка кнопок
+    document.getElementById('btn-download-user').onclick = downloadExcelData;
+    document.getElementById('btn-download-admin').onclick = downloadExcelData;
+
     // 🔐 АВТОРИЗАЦИЯ & РОУТИНГ
     let isLogin = true;
     const modal = document.getElementById('auth-modal');
     const landingPage = document.getElementById('landing-page');
     
     document.getElementById('btn-login').onclick = () => modal.classList.remove('hidden');
-    document.getElementById('hero-login').onclick = (e) => {
-      e.preventDefault();
-      modal.classList.remove('hidden');
-    };
+    document.getElementById('hero-login').onclick = (e) => { e.preventDefault(); modal.classList.remove('hidden'); };
     document.getElementById('close-modal').onclick = () => modal.classList.add('hidden');
     
     document.getElementById('auth-switch-link').onclick = (e) => {
@@ -492,31 +530,20 @@ const firebaseConfig = {
         if(isLogin) {
           await auth.signInWithEmailAndPassword(email, pass);
         } else {
-          if(pass.length < 6) {
-            alert('Пароль должен быть не менее 6 символов');
-            return;
-          }
+          if(pass.length < 6) { alert('Пароль должен быть не менее 6 символов'); return; }
           const cred = await auth.createUserWithEmailAndPassword(email, pass);
           await db.collection('users').doc(cred.user.uid).set({ 
-            email, 
-            role, 
-            createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+            email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() 
           });
         }
         modal.classList.add('hidden');
       } catch(e) {
         console.error('Ошибка:', e);
-        if(e.code === 'auth/invalid-email') {
-          alert('Неверный формат email');
-        } else if(e.code === 'auth/weak-password') {
-          alert('Пароль слишком слабый (минимум 6 символов)');
-        } else if(e.code === 'auth/email-already-in-use') {
-          alert('Этот email уже зарегистрирован');
-        } else if(e.code === 'auth/invalid-credential') {
-          alert('Неверный email или пароль');
-        } else {
-          alert('Ошибка: ' + e.message);
-        }
+        if(e.code === 'auth/invalid-email') alert('Неверный формат email');
+        else if(e.code === 'auth/weak-password') alert('Пароль слишком слабый (минимум 6 символов)');
+        else if(e.code === 'auth/email-already-in-use') alert('Этот email уже зарегистрирован');
+        else if(e.code === 'auth/invalid-credential') alert('Неверный email или пароль');
+        else alert('Ошибка: ' + e.message);
       }
     };
 
@@ -554,37 +581,20 @@ const firebaseConfig = {
     });
 
     function loadAdminHistory() {
-      db.collection('water_readings')
-        .orderBy('timestamp', 'desc')
-        .limit(15)
-        .onSnapshot(snap => {
-          const allData = [];
-          snap.forEach(doc => {
-            allData.push(doc.data());
-          });
-          
-          const sortedData = sortByTimestamp([...allData]);
-          
-          document.querySelector('#data-table tbody').innerHTML = '';
-          sortedData.forEach(data => {
-            updateAdminCharts(data);
-          });
-          
-          [...allData].reverse().forEach(data => {
-            addUserTableRow(data);
-          });
-        });
+      db.collection('water_readings').orderBy('timestamp', 'desc').limit(15).onSnapshot(snap => {
+        const allData = [];
+        snap.forEach(doc => allData.push(doc.data()));
+        const sortedData = sortByTimestamp([...allData]);
+        document.querySelector('#data-table tbody').innerHTML = '';
+        sortedData.forEach(data => updateAdminCharts(data));
+        [...allData].reverse().forEach(data => addUserTableRow(data));
+      });
     }
 
     function loadUserLatest() {
-      db.collection('water_readings')
-        .orderBy('timestamp', 'desc')
-        .limit(1)
-        .onSnapshot(snap => {
-          if(!snap.empty) {
-            renderUserView(snap.docs[0].data());
-          }
-        });
+      db.collection('water_readings').orderBy('timestamp', 'desc').limit(1).onSnapshot(snap => {
+        if(!snap.empty) renderUserView(snap.docs[0].data());
+      });
     }
   </script>
 </body>
