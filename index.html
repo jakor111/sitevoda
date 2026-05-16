@@ -566,155 +566,184 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function showWaterbodySelection() {
-    console.log('showWaterbodySelection вызвана');
-    document.getElementById('landing-page').classList.add('hidden');
-    document.getElementById('user-view').classList.add('hidden');
-    document.getElementById('admin-view').classList.add('hidden');
-    document.getElementById('waterbody-selection').classList.remove('hidden');
-    
-    setTimeout(() => {
-      if (!isMapInitialized) {
-        initMap();
-      } else if (map) {
-        map.resize();
-      }
-    }, 100);
-    
-    renderWaterbodyList();
-    const saved = localStorage.getItem('selectedWaterbody');
-    if (saved && waterbodies[saved]) selectWaterbody(saved);
-  }
-
-  let isLogin = true;
-  const modal = document.getElementById('auth-modal');
-  
-  const btnLogin = document.getElementById('btn-login');
-  const heroLogin = document.getElementById('hero-login');
-  const closeModal = document.getElementById('close-modal');
-  const btnChangeWaterbody = document.getElementById('btn-change-waterbody');
-  const adminBtnChangeWaterbody = document.getElementById('admin-btn-change-waterbody');
-  const authSwitchLink = document.getElementById('auth-switch-link');
-  const authAction = document.getElementById('auth-action');
-  const btnLogout = document.getElementById('btn-logout');
-  const btnDownloadUser = document.getElementById('btn-download-user');
-  const btnDownloadAdmin = document.getElementById('btn-download-admin');
-  
-  if (btnLogin) btnLogin.onclick = () => modal.classList.remove('hidden');
-  if (heroLogin) heroLogin.onclick = (e) => { e.preventDefault(); modal.classList.remove('hidden'); };
-  if (closeModal) closeModal.onclick = () => modal.classList.add('hidden');
-  if (btnChangeWaterbody) {
-    btnChangeWaterbody.onclick = function() {
-      console.log('Кнопка "Сменить водоём" нажата');
-      showWaterbodySelection();
-    };
-  } else {
-    console.error('Кнопка btn-change-waterbody не найдена!');
-  }
-  if (adminBtnChangeWaterbody) adminBtnChangeWaterbody.onclick = showWaterbodySelection;
-  
-  if (authSwitchLink) {
-    authSwitchLink.onclick = (e) => {
-      e.preventDefault();
-      isLogin = !isLogin;
-      document.getElementById('auth-title').textContent = isLogin ? 'Вход в систему' : 'Регистрация';
-      document.getElementById('auth-action').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
-      document.getElementById('auth-switch-text').textContent = isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?';
-      document.getElementById('auth-switch-link').textContent = isLogin ? 'Зарегистрироваться' : 'Войти';
-      document.getElementById('role-select').classList.toggle('hidden', isLogin);
-    };
-  }
-  
-  if (authAction) {
-    authAction.onclick = async () => {
-      const email = document.getElementById('email').value.trim();
-      const pass = document.getElementById('password').value;
-      const role = document.getElementById('role-select').value;
-      if (!email || !pass) { alert('Заполните email и пароль'); return; }
-      try {
-        if(isLogin) {
-          await auth.signInWithEmailAndPassword(email, pass);
-        } else {
-          if (pass.length < 6) { alert('Пароль минимум 6 символов'); return; }
-          const cred = await auth.createUserWithEmailAndPassword(email, pass);
-          await db.collection('users').doc(cred.user.uid).set({ email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-        }
-        modal.classList.add('hidden');
-      } catch(e) {
-        console.error(e);
-        alert('Ошибка: ' + e.message);
-      }
-    };
-  }
-  
-  if (btnLogout) btnLogout.onclick = () => auth.signOut();
-  if (btnDownloadUser) btnDownloadUser.onclick = downloadExcelData;
-  if (btnDownloadAdmin) btnDownloadAdmin.onclick = downloadExcelData;
-
-  auth.onAuthStateChanged(async user => {
-    console.log('onAuthStateChanged, user:', user ? user.email : 'null');
-    if(!user) {
-      document.getElementById('btn-login').classList.remove('hidden');
-      document.getElementById('header-controls').classList.add('hidden');
+    // 🛠 ИСПРАВЛЕННАЯ ФУНКЦИЯ ПОКАЗА ВЫБОРА ВОДОЁМА
+    function showWaterbodySelection() {
+      console.log(">>> Кнопка 'Сменить водоем' сработала");
+      
+      // Скрываем все остальные экраны
+      document.getElementById('landing-page').classList.add('hidden');
       document.getElementById('user-view').classList.add('hidden');
       document.getElementById('admin-view').classList.add('hidden');
-      document.getElementById('waterbody-selection').classList.add('hidden');
-      document.getElementById('landing-page').classList.remove('hidden');
-      stopEmulator();
-      return;
+      
+      // Показываем экран выбора
+      const mapContainer = document.getElementById('waterbody-selection');
+      mapContainer.classList.remove('hidden');
+      
+      // ВАЖНО: Даем браузеру время отрисовать контейнер (100мс), 
+      // а затем заставляем карту пересчитать свои размеры
+      setTimeout(() => {
+        if (map) {
+          console.log("Обновляем размер карты...");
+          map.resize(); 
+          map.invalidateSize(); // Специальная команда MapLibre для перерисовки
+        } else {
+          console.log("Карты нет, создаем новую...");
+          initMap();
+        }
+      }, 100);
+      
+      renderWaterbodyList();
+      
+      // Если был сохранен выбор, подсвечиваем его, но не переключаем экран сразу
+      const saved = localStorage.getItem('selectedWaterbody');
+      if (saved && waterbodies[saved]) {
+        // Можно добавить визуальную подсветку карточки, если нужно
+      }
     }
+
+    // 🔐 Авторизация и привязка кнопок
+    let isLogin = true;
+    const modal = document.getElementById('auth-modal');
     
-    document.getElementById('btn-login').classList.add('hidden');
-    document.getElementById('header-controls').classList.remove('hidden');
-    
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    const role = userDoc.exists ? userDoc.data().role : 'user';
-    document.getElementById('user-role').textContent = role === 'admin' ? '👑 Администратор' : '👤 Пользователь';
-    
-    if (!selectedWaterbodyId) {
-      showWaterbodySelection();
-      return;
-    }
-    
-    document.getElementById('user-view').classList.toggle('hidden', role !== 'user');
-    document.getElementById('admin-view').classList.toggle('hidden', role !== 'admin');
-    
-    if(role === 'admin') {
-      initCharts();
-      startEmulator();
-      loadAdminHistory();
+    // Привязка кнопок с проверками и логами
+    const btnLogin = document.getElementById('btn-login');
+    if (btnLogin) btnLogin.onclick = () => modal.classList.remove('hidden');
+
+    const heroLogin = document.getElementById('hero-login');
+    if (heroLogin) heroLogin.onclick = (e) => { e.preventDefault(); modal.classList.remove('hidden'); };
+
+    const closeModal = document.getElementById('close-modal');
+    if (closeModal) closeModal.onclick = () => modal.classList.add('hidden');
+
+    // Кнопка смены водоема для ПОЛЬЗОВАТЕЛЯ
+    const btnChangeWaterbody = document.getElementById('btn-change-waterbody');
+    if (btnChangeWaterbody) {
+      btnChangeWaterbody.onclick = function() {
+        console.log("Клик пользователя: Сменить водоём");
+        showWaterbodySelection();
+      };
     } else {
-      loadUserLatest();
+      console.warn("Кнопка btn-change-waterbody не найдена в DOM!");
     }
-  });
 
-  function loadAdminHistory() {
-    let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(50);
-    if (selectedWaterbodyId) {
-      query = db.collection('water_readings').where('waterbodyId', '==', selectedWaterbodyId).orderBy('timestamp', 'desc').limit(50);
+    // Кнопка смены водоема для АДМИНИСТРАТОРА
+    const adminBtnChangeWaterbody = document.getElementById('admin-btn-change-waterbody');
+    if (adminBtnChangeWaterbody) {
+      adminBtnChangeWaterbody.onclick = function() {
+        console.log("Клик админа: Сменить водоём");
+        showWaterbodySelection();
+      };
+    } else {
+      console.warn("Кнопка admin-btn-change-waterbody не найдена в DOM!");
     }
-    query.onSnapshot(snap => {
-      const allData = [];
-      snap.forEach(doc => allData.push(doc.data()));
-      const sortedData = sortByTimestamp([...allData]);
-      document.querySelector('#data-table tbody').innerHTML = '';
-      sortedData.forEach(data => updateAdminCharts(data));
-      [...allData].reverse().forEach(data => addUserTableRow(data));
-    });
-  }
+    
+    const authSwitchLink = document.getElementById('auth-switch-link');
+    if (authSwitchLink) {
+      authSwitchLink.onclick = (e) => {
+        e.preventDefault();
+        isLogin = !isLogin;
+        document.getElementById('auth-title').textContent = isLogin ? 'Вход в систему' : 'Регистрация';
+        document.getElementById('auth-action').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
+        document.getElementById('auth-switch-text').textContent = isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?';
+        document.getElementById('auth-switch-link').textContent = isLogin ? 'Зарегистрироваться' : 'Войти';
+        document.getElementById('role-select').classList.toggle('hidden', isLogin);
+      };
+    }
+    
+    const authAction = document.getElementById('auth-action');
+    if (authAction) {
+      authAction.onclick = async () => {
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('password').value;
+        const role = document.getElementById('role-select').value;
+        if (!email || !pass) { alert('Заполните email и пароль'); return; }
+        try {
+          if(isLogin) {
+            await auth.signInWithEmailAndPassword(email, pass);
+          } else {
+            if (pass.length < 6) { alert('Пароль минимум 6 символов'); return; }
+            const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            await db.collection('users').doc(cred.user.uid).set({ email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+          }
+          modal.classList.add('hidden');
+        } catch(e) {
+          console.error(e);
+          alert('Ошибка: ' + e.message);
+        }
+      };
+    }
+    
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) btnLogout.onclick = () => auth.signOut();
+    
+    const btnDownloadUser = document.getElementById('btn-download-user');
+    if (btnDownloadUser) btnDownloadUser.onclick = downloadExcelData;
+    
+    const btnDownloadAdmin = document.getElementById('btn-download-admin');
+    if (btnDownloadAdmin) btnDownloadAdmin.onclick = downloadExcelData;
 
-  function loadUserLatest() {
-    let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(1);
-    if (selectedWaterbodyId) {
-      query = db.collection('water_readings').where('waterbodyId', '==', selectedWaterbodyId).orderBy('timestamp', 'desc').limit(1);
-    }
-    query.onSnapshot(snap => {
-      if(!snap.empty) renderUserView(snap.docs[0].data());
+    // Слушатель состояния авторизации
+    auth.onAuthStateChanged(async user => {
+      console.log('Статус авторизации:', user ? user.email : 'null');
+      if(!user) {
+        document.getElementById('btn-login').classList.remove('hidden');
+        document.getElementById('header-controls').classList.add('hidden');
+        document.getElementById('user-view').classList.add('hidden');
+        document.getElementById('admin-view').classList.add('hidden');
+        document.getElementById('waterbody-selection').classList.add('hidden');
+        document.getElementById('landing-page').classList.remove('hidden');
+        stopEmulator();
+        return;
+      }
+      
+      document.getElementById('btn-login').classList.add('hidden');
+      document.getElementById('header-controls').classList.remove('hidden');
+      
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      const role = userDoc.exists ? userDoc.data().role : 'user';
+      document.getElementById('user-role').textContent = role === 'admin' ? '👑 Администратор' : '👤 Пользователь';
+      
+      if (!selectedWaterbodyId) {
+        showWaterbodySelection();
+        return;
+      }
+      
+      document.getElementById('user-view').classList.toggle('hidden', role !== 'user');
+      document.getElementById('admin-view').classList.toggle('hidden', role !== 'admin');
+      
+      if(role === 'admin') {
+        initCharts();
+        startEmulator();
+        loadAdminHistory();
+      } else {
+        loadUserLatest();
+      }
     });
-  }
-  
-  console.log('Инициализация завершена');
-});
-</script>
+
+    function loadAdminHistory() {
+      let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(50);
+      if (selectedWaterbodyId) {
+        query = db.collection('water_readings').where('waterbodyId', '==', selectedWaterbodyId).orderBy('timestamp', 'desc').limit(50);
+      }
+      query.onSnapshot(snap => {
+        const allData = [];
+        snap.forEach(doc => allData.push(doc.data()));
+        const sortedData = sortByTimestamp([...allData]);
+        document.querySelector('#data-table tbody').innerHTML = '';
+        sortedData.forEach(data => updateAdminCharts(data));
+        [...allData].reverse().forEach(data => addUserTableRow(data));
+      });
+    }
+
+    function loadUserLatest() {
+      let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(1);
+      if (selectedWaterbodyId) {
+        query = db.collection('water_readings').where('waterbodyId', '==', selectedWaterbodyId).orderBy('timestamp', 'desc').limit(1);
+      }
+      query.onSnapshot(snap => {
+        if(!snap.empty) renderUserView(snap.docs[0].data());
+      });
+    }
+  </script>
 </body>
 </html>
