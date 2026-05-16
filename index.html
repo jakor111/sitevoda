@@ -8,8 +8,9 @@
   <!-- Chart.js для графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <!-- Yandex Maps API -->
-  <script src="https://api-maps.yandex.ru/2.1/?apikey=a338e549-9f8d-4fae-89b9-e60b37243562&lang=ru_RU"></script>
+  <!-- MapLibre GL JS (Бесплатная карта, без ключа) -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   
   <!-- SheetJS для Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -52,7 +53,7 @@
     .waterbody-card.selected { border-color: var(--primary); background: #eff6ff; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
     .waterbody-card h3 { color: var(--primary); margin-bottom: 0.5rem; font-size: 1.25rem; }
     .waterbody-card p { color: #64748b; font-size: 0.9rem; margin: 0.25rem 0; }
-    #map { height: 400px; border-radius: 12px; margin-bottom: 1.5rem; z-index: 1; }
+    #map { height: 450px; border-radius: 12px; margin-bottom: 1.5rem; }
     .waterbody-info { background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid var(--primary); }
     .waterbody-info h3 { color: var(--primary); margin-bottom: 0.5rem; }
     .hero { text-align: center; padding: 4rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; margin-bottom: 2rem; }
@@ -163,7 +164,7 @@
 
   <script>
     // 🔧 Firebase Config
-const firebaseConfig = {
+   const firebaseConfig = {
   apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
   authDomain: "site-voda-vkr.firebaseapp.com",
   projectId: "site-voda-vkr",
@@ -212,58 +213,45 @@ const firebaseConfig = {
     };
 
     let selectedWaterbodyId = null;
-    let yandexMap = null;
-    let yandexPlacemarks = [];
+    let map = null;
+    let markers = [];
     let emulatorInterval = null;
 
-// 🗺️ ИНИЦИАЛИЗАЦИЯ КАРТЫ (ЯНДЕКС)
-function initMap() {
-  ymaps.ready(() => {
-    yandexMap = new ymaps.Map('map', {
-      center: [55.7558, 37.6173],
-      zoom: 6,
-      controls: ['zoomControl', 'searchControl']
-    });
-
-    Object.values(waterbodies).forEach(wb => {
-      // Создаем содержимое балуна
-      const balloonContent = `
-        <div style="padding: 10px; max-width: 300px;">
-          <h3 style="margin: 0 0 10px 0; color: #2563eb;">${wb.name}</h3>
-          <p style="margin: 5px 0;"><strong>Тип:</strong> ${wb.characteristics.type}</p>
-          <p style="margin: 5px 0;"><strong>Глубина:</strong> ${wb.characteristics.depth}</p>
-          <p style="margin: 5px 0;"><strong>Площадь:</strong> ${wb.characteristics.area}</p>
-          <p style="margin: 5px 0;"><strong>Назначение:</strong> ${wb.characteristics.usage}</p>
-          <p style="margin: 10px 0 5px 0;">${wb.description}</p>
-          <button onclick="selectWaterbodyFromMap('${wb.id}')" 
-                  style="margin-top: 10px; padding: 5px 15px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Выбрать водоём
-          </button>
-        </div>
-      `;
-
-      const placemark = new ymaps.Placemark([wb.location.lat, wb.location.lng], {
-        balloonContentHeader: wb.name,
-        balloonContentBody: balloonContent,
-        hintContent: wb.name
-      }, {
-        preset: 'islands#blueWaterIcon',
-        draggable: false
+    // 🗺️ ИНИЦИАЛИЗАЦИЯ КАРТЫ (MAPLIBRE GL JS)
+    function initMap() {
+      map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://tiles.openfreemap.org/styles/liberty', // Бесплатные векторные тайлы, без ключа
+        center: [37.6173, 55.7558], // [lng, lat]
+        zoom: 6
       });
 
-      yandexMap.geoObjects.add(placemark);
-      yandexPlacemarks.push(placemark);
-    });
-  });
-}
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-// Функция для выбора водоема из карты (вызывается из балуна)
-function selectWaterbodyFromMap(id) {
-  selectWaterbody(id);
-  window.selectWaterbodyFromMap = selectWaterbodyFromMap;
-  // Закрываем все балуны
-  yandexPlacemarks.forEach(pm => pm.balloon.close());
-}
+      // Добавляем маркеры
+      Object.values(waterbodies).forEach(wb => {
+        const marker = new maplibregl.Marker({ color: '#2563eb', scale: 0.8 })
+          .setLngLat([wb.location.lng, wb.location.lat])
+          .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(`
+            <div style="padding: 8px; max-width: 220px; font-family: system-ui, sans-serif;">
+              <h3 style="margin: 0 0 6px 0; font-size: 1rem; color: #2563eb;">${wb.name}</h3>
+              <p style="margin: 4px 0; font-size: 0.85rem; color: #555; line-height: 1.4;">${wb.description}</p>
+              <button onclick="window.selectWaterbodyFromMap('${wb.id}')" 
+                      style="margin-top: 8px; padding: 5px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                Выбрать водоём
+              </button>
+            </div>
+          `))
+          .addTo(map);
+        
+        markers.push(marker);
+      });
+    }
+
+    // Функция для выбора водоема из карты (глобальная область)
+    window.selectWaterbodyFromMap = function(id) {
+      selectWaterbody(id);
+    };
 
     // 📋 ОТОБРАЖЕНИЕ СПИСКА ВОДОЁМОВ
     function renderWaterbodyList() {
@@ -290,14 +278,14 @@ function selectWaterbodyFromMap(id) {
       selectedWaterbodyId = id;
       const wb = waterbodies[id];
       
-      // Обновляем карту
-      yandexMap.setCenter([wb.location.lat, wb.location.lng], 10);
+      // Плавный перелёт камеры
+      map.flyTo({ center: [wb.location.lng, wb.location.lat], zoom: 10, essential: true, duration: 1500 });
       
-      // Открываем балун только у выбранной метки
-      yandexPlacemarks.forEach((pm, idx) => {
+      // Открытие/закрытие попапов
+      markers.forEach((m, idx) => {
         const wbId = Object.keys(waterbodies)[idx];
-        if (wbId === id) pm.balloon.open();
-        else pm.balloon.close();
+        if (wbId === id) m.togglePopup();
+        else m.togglePopup();
       });
 
       renderWaterbodyList();
@@ -525,6 +513,7 @@ function selectWaterbodyFromMap(id) {
     function showDashboard() {
       if (!selectedWaterbodyId) return;
       const wb = waterbodies[selectedWaterbodyId];
+      
       document.getElementById('selected-waterbody-name').textContent = wb.name;
       document.getElementById('selected-waterbody-desc').textContent = wb.description;
       document.getElementById('admin-waterbody-name').textContent = wb.name;
@@ -540,9 +529,14 @@ function selectWaterbodyFromMap(id) {
       document.getElementById('admin-view').classList.add('hidden');
       document.getElementById('waterbody-selection').classList.remove('hidden');
       
-      if (!yandexMap) initMap();
-      renderWaterbodyList();
+      // ВАЖНО: перерисовка карты после показа скрытого контейнера
+      if (!map) {
+        initMap();
+      } else {
+        setTimeout(() => map.resize(), 100);
+      }
       
+      renderWaterbodyList();
       const saved = localStorage.getItem('selectedWaterbody');
       if (saved && waterbodies[saved]) selectWaterbody(saved);
     }
