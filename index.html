@@ -337,36 +337,51 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 
-  function startEmulator() {
-    console.log('Запуск эмулятора...');
-    document.getElementById('btn-emulator').classList.add('hidden');
-    document.getElementById('btn-stop').classList.remove('hidden');
-    
-    const now = new Date();
-    const batchPromises = [];
-    
-    for (let i = 0; i < 50; i++) {
-      const randomMinutesAgo = Math.floor(Math.random() * 3600000);
-      const pastTime = new Date(now.getTime() - randomMinutesAgo);
-      const data = generateReading();
-      data.timestamp = pastTime.getTime();
-      batchPromises.push(db.collection('water_readings').add(data));
-    }
+function startEmulator() {
+  console.log("Запуск эмулятора...");
+  document.getElementById('btn-emulator').classList.add('hidden');
+  document.getElementById('btn-stop').classList.remove('hidden');
+  
+  const now = new Date();
+  const batchPromises = [];
+  const emulatedData = []; // Добавляем массив для хранения данных
+  
+  for (let i = 0; i < 50; i++) {
+    const randomMinutesAgo = Math.floor(Math.random() * 3600000);
+    const pastTime = new Date(now.getTime() - randomMinutesAgo);
+    const data = generateReading();
+    data.timestamp = pastTime.getTime();
+    emulatedData.push(data); // Сохраняем данные локально
+    batchPromises.push(db.collection('water_readings').add(data));
+  }
 
-    Promise.all(batchPromises).then(() => {
-      console.log("Эмуляция 50 записей завершена");
-      emulatorInterval = setInterval(async () => {
-        const data = generateReading();
-        await db.collection('water_readings').add(data);
-      }, 5000);
+  Promise.all(batchPromises).then(() => {
+    console.log("Эмуляция 50 записей завершена");
+    
+    // Сортируем данные по времени
+    emulatedData.sort((a, b) => a.timestamp - b.timestamp);
+    
+    // Очищаем таблицу
+    document.querySelector('#data-table tbody').innerHTML = '';
+    
+    // Обновляем графики и таблицу сразу
+    emulatedData.forEach(data => {
+      updateAdminCharts(data);
+      addUserTableRow(data);
     });
-  }
-
-  function stopEmulator() {
-    clearInterval(emulatorInterval);
-    document.getElementById('btn-emulator').classList.remove('hidden');
-    document.getElementById('btn-stop').classList.add('hidden');
-  }
+    
+    // Запускаем интервал для новых данных
+    emulatorInterval = setInterval(async () => {
+      const data = generateReading();
+      await db.collection('water_readings').add(data);
+      updateAdminCharts(data);
+      addUserTableRow(data);
+    }, 5000);
+  }).catch(error => {
+    console.error("Ошибка при эмуляции:", error);
+    alert("Ошибка при генерации данных: " + error.message);
+  });
+}
 
   const charts = {};
   function initCharts() {
@@ -721,19 +736,41 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function loadAdminHistory() {
-      let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(50);
-      if (selectedWaterbodyId) {
-        query = db.collection('water_readings').where('waterbodyId', '==', selectedWaterbodyId).orderBy('timestamp', 'desc').limit(50);
-      }
-      query.onSnapshot(snap => {
-        const allData = [];
-        snap.forEach(doc => allData.push(doc.data()));
-        const sortedData = sortByTimestamp([...allData]);
-        document.querySelector('#data-table tbody').innerHTML = '';
-        sortedData.forEach(data => updateAdminCharts(data));
-        [...allData].reverse().forEach(data => addUserTableRow(data));
-      });
-    }
+  console.log("Загрузка истории администратора...");
+  let query = db.collection('water_readings')
+    .orderBy('timestamp', 'desc')
+    .limit(50);
+    
+  if (selectedWaterbodyId) {
+    query = db.collection('water_readings')
+      .where('waterbodyId', '==', selectedWaterbodyId)
+      .orderBy('timestamp', 'desc')
+      .limit(50);
+  }
+  
+  query.onSnapshot(snap => {
+    console.log(`Получено ${snap.size} записей`);
+    const allData = [];
+    snap.forEach(doc => {
+      const data = doc.data();
+      allData.push(data);
+    });
+    
+    const sortedData = sortByTimestamp([...allData]);
+    console.log(`Отсортировано ${sortedData.length} записей`);
+    
+    // Очищаем таблицу
+    document.querySelector('#data-table tbody').innerHTML = '';
+    
+    // Обновляем графики
+    sortedData.forEach(data => updateAdminCharts(data));
+    
+    // Заполняем таблицу (новые сверху)
+    [...allData].reverse().forEach(data => addUserTableRow(data));
+  }, error => {
+    console.error("Ошибка загрузки истории:", error);
+  });
+}
 
     function loadUserLatest() {
       let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(1);
