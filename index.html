@@ -8,10 +8,10 @@
   <!-- Chart.js для графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <!-- SheetJS для генерации Excel -->
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <!-- SheetJS для генерации Excel (ИСПРАВЛЕНО) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   
-  <!-- Firebase SDK (Compat версия для статического хостинга) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -278,13 +278,13 @@
 
   <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.firebasestorage.app",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -442,7 +442,14 @@
       document.getElementById('recommendations').innerHTML = recs.map(r => `<li>${r}</li>`).join('');
     }
 
+    // 🔽 ФУНКЦИЯ СКАЧИВАНИЯ EXCEL (ИСПРАВЛЕНА)
     async function downloadExcelData() {
+      // Проверяем, загрузилась ли библиотека
+      if (typeof XLSX === 'undefined') {
+        alert('Ошибка: Библиотека XLSX не загрузилась. Проверьте подключение к интернету.');
+        return;
+      }
+
       const btns = [document.getElementById('btn-download-user'), document.getElementById('btn-download-admin')];
       const originalTexts = btns.map(b => b ? b.textContent : '');
       
