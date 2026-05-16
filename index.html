@@ -164,14 +164,15 @@
 
   <script>
     // 🔧 Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.firebasestorage.app",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+    };
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -216,13 +217,20 @@ const firebaseConfig = {
     let map = null;
     let markers = [];
     let emulatorInterval = null;
+    let isMapInitialized = false; // Флаг: была ли карта уже создана
 
     // 🗺️ ИНИЦИАЛИЗАЦИЯ КАРТЫ (MAPLIBRE GL JS)
     function initMap() {
+      // Если карта уже создана, просто обновляем её размеры и выходим
+      if (isMapInitialized && map) {
+        map.resize();
+        return;
+      }
+
       map = new maplibregl.Map({
         container: 'map',
-        style: 'https://tiles.openfreemap.org/styles/liberty', // Бесплатные векторные тайлы, без ключа
-        center: [37.6173, 55.7558], // [lng, lat]
+        style: 'https://tiles.openfreemap.org/styles/liberty', 
+        center: [37.6173, 55.7558], 
         zoom: 6
       });
 
@@ -246,6 +254,8 @@ const firebaseConfig = {
         
         markers.push(marker);
       });
+
+      isMapInitialized = true;
     }
 
     // Функция для выбора водоема из карты (глобальная область)
@@ -279,14 +289,16 @@ const firebaseConfig = {
       const wb = waterbodies[id];
       
       // Плавный перелёт камеры
-      map.flyTo({ center: [wb.location.lng, wb.location.lat], zoom: 10, essential: true, duration: 1500 });
-      
-      // Открытие/закрытие попапов
-      markers.forEach((m, idx) => {
-        const wbId = Object.keys(waterbodies)[idx];
-        if (wbId === id) m.togglePopup();
-        else m.togglePopup();
-      });
+      if (map) {
+        map.flyTo({ center: [wb.location.lng, wb.location.lat], zoom: 10, essential: true, duration: 1500 });
+        
+        // Открытие/закрытие попапов
+        markers.forEach((m, idx) => {
+          const wbId = Object.keys(waterbodies)[idx];
+          if (wbId === id) m.togglePopup();
+          else m.togglePopup();
+        });
+      }
 
       renderWaterbodyList();
       localStorage.setItem('selectedWaterbody', id);
@@ -523,18 +535,22 @@ const firebaseConfig = {
       document.getElementById('waterbody-selection').classList.add('hidden');
     }
 
+    // 🛠 ИСПРАВЛЕННАЯ ФУНКЦИЯ ПОКАЗА ВЫБОРА ВОДОЁМА
     function showWaterbodySelection() {
       document.getElementById('landing-page').classList.add('hidden');
       document.getElementById('user-view').classList.add('hidden');
       document.getElementById('admin-view').classList.add('hidden');
       document.getElementById('waterbody-selection').classList.remove('hidden');
       
-      // ВАЖНО: перерисовка карты после показа скрытого контейнера
-      if (!map) {
-        initMap();
-      } else {
-        setTimeout(() => map.resize(), 100);
-      }
+      // Ключевое исправление: даем браузеру 100мс на отрисовку скрытого блока,
+      // и только потом инициализируем или обновляем карту.
+      setTimeout(() => {
+        if (!isMapInitialized) {
+          initMap();
+        } else if (map) {
+          map.resize(); // Пересчет размеров контейнера
+        }
+      }, 100);
       
       renderWaterbodyList();
       const saved = localStorage.getItem('selectedWaterbody');
