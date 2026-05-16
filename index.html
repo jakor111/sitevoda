@@ -277,14 +277,14 @@
   </div>
 
   <script>
-   const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.firebasestorage.app",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -305,7 +305,7 @@
         temp: 12 + seasonalShift + (Math.random() * 8 - 4),
         nitrates: 10 + (Math.random() * 15),
         phosphates: 0.2 + (Math.random() * 1.4),
-        cod: 10 + (Math.random() * 10), // Исправлено: реалистичный диапазон 10-20
+        cod: 10 + (Math.random() * 10),
         transparency: 30 + (Math.random() * 20),
         phytoplankton: 20 + (Math.random() * 60),
         heavy_metals: { Cu: 1 + Math.random()*10, Ni: 2 + Math.random()*15, Co: 0.5 + Math.random()*3 }
@@ -360,7 +360,7 @@
             const timeParts = timeStr.split(':');
             const now = new Date();
             const time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 
-                                  parseInt(timeParts[0]), parseInt(timeParts[1]), parseInt(timeParts[2]));
+                                  parseInt(timeParts[0]), parseInt(timeParts[1]), parseInt(timeParts[2] || 0));
             allData.push({ timestamp: time.getTime(), [key]: charts[key].data.datasets[0].data[i] });
           }
         }
@@ -442,7 +442,6 @@
       document.getElementById('recommendations').innerHTML = recs.map(r => `<li>${r}</li>`).join('');
     }
 
-    // 🔽 ФУНКЦИЯ СКАЧИВАНИЯ EXCEL
     async function downloadExcelData() {
       const btns = [document.getElementById('btn-download-user'), document.getElementById('btn-download-admin')];
       const originalTexts = btns.map(b => b ? b.textContent : '');
@@ -499,11 +498,9 @@
       }
     }
 
-    // Привязка кнопок
     document.getElementById('btn-download-user').onclick = downloadExcelData;
     document.getElementById('btn-download-admin').onclick = downloadExcelData;
 
-    // 🔐 АВТОРИЗАЦИЯ & РОУТИНГ
     let isLogin = true;
     const modal = document.getElementById('auth-modal');
     const landingPage = document.getElementById('landing-page');
