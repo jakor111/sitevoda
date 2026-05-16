@@ -8,7 +8,7 @@
   <!-- Chart.js для графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <!-- SheetJS для генерации Excel (ИСПРАВЛЕНО) -->
+  <!-- SheetJS для генерации Excel (ИСПРАВЛЕНО: используем cdnjs) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   
   <!-- Firebase SDK -->
@@ -43,106 +43,37 @@
     #auth-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; }
     
-    /* Стили для главной страницы */
     .hero {
-      text-align: center;
-      padding: 4rem 2rem;
+      text-align: center; padding: 4rem 2rem;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border-radius: 12px;
-      margin-bottom: 2rem;
+      color: white; border-radius: 12px; margin-bottom: 2rem;
     }
-    .hero h1 {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-    }
-    .hero .water-drop {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-    .hero p {
-      font-size: 1.25rem;
-      max-width: 800px;
-      margin: 0 auto 2rem;
-      opacity: 0.95;
-    }
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
+    .hero h1 { font-size: 3rem; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+    .hero .water-drop { font-size: 4rem; margin-bottom: 1rem; }
+    .hero p { font-size: 1.25rem; max-width: 800px; margin: 0 auto 2rem; opacity: 0.95; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
     .feature-card {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      text-align: center;
-      transition: transform 0.3s ease;
+      background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      text-align: center; transition: transform 0.3s ease;
     }
-    .feature-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 12px rgba(0,0,0,0.15);
-    }
-    .feature-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-    .feature-card h3 {
-      color: var(--primary);
-      margin-bottom: 0.75rem;
-      font-size: 1.5rem;
-    }
-    .feature-card p {
-      color: #64748b;
-      line-height: 1.6;
-    }
+    .feature-card:hover { transform: translateY(-5px); box-shadow: 0 8px 12px rgba(0,0,0,0.15); }
+    .feature-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .feature-card h3 { color: var(--primary); margin-bottom: 0.75rem; font-size: 1.5rem; }
+    .feature-card p { color: #64748b; line-height: 1.6; }
     .cta-button {
-      display: inline-block;
-      padding: 1rem 2.5rem;
-      background: white;
-      color: var(--primary);
-      border-radius: 50px;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 1.1rem;
-      margin-top: 1rem;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      display: inline-block; padding: 1rem 2.5rem; background: white; color: var(--primary);
+      border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem;
+      margin-top: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .cta-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-    }
+    .cta-button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.2); }
     .info-section {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      margin-top: 2rem;
+      background: white; padding: 2rem; border-radius: 12px; margin-top: 2rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
-    .info-section h2 {
-      color: var(--primary);
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    .info-section ul {
-      list-style: none;
-      padding-left: 0;
-    }
-    .info-section li {
-      padding: 0.5rem 0;
-      padding-left: 1.5rem;
-      position: relative;
-    }
-    .info-section li:before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: var(--success);
-      font-weight: bold;
-    }
+    .info-section h2 { color: var(--primary); margin-bottom: 1rem; text-align: center; }
+    .info-section ul { list-style: none; padding-left: 0; }
+    .info-section li { padding: 0.5rem 0; padding-left: 1.5rem; position: relative; }
+    .info-section li:before { content: "✓"; position: absolute; left: 0; color: var(--success); font-weight: bold; }
   </style>
 </head>
 <body>
@@ -156,7 +87,7 @@
   </header>
 
   <div class="container">
-    <!-- Главная страница для неавторизованных пользователей -->
+    <!-- Главная страница -->
     <div id="landing-page">
       <div class="hero">
         <div class="water-drop">💧</div>
@@ -277,14 +208,14 @@
   </div>
 
   <script>
-  const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.firebasestorage.app",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -293,313 +224,13 @@
     let emulatorInterval = null;
     const waterbody = "Нижний фермский пруд";
     
-    function generateReading() {
-      const now = new Date();
-      const month = now.getMonth();
+    // Функция генерации данных, принимающая время (timestamp)
+    function generateReading(customTime) {
+      const time = customTime || new Date();
+      const month = time.getMonth();
       const seasonalShift = Math.sin((month - 4) * Math.PI / 6) * 2;
       
       return {
-        timestamp: now.getTime(),
+        timestamp: time.getTime(), // Используем переданное время или текущее
         waterbody,
-        ph: 7.0 + (Math.random() * 1.5 - 0.75),
-        temp: 12 + seasonalShift + (Math.random() * 8 - 4),
-        nitrates: 10 + (Math.random() * 15),
-        phosphates: 0.2 + (Math.random() * 1.4),
-        cod: 10 + (Math.random() * 10),
-        transparency: 30 + (Math.random() * 20),
-        phytoplankton: 20 + (Math.random() * 60),
-        heavy_metals: { Cu: 1 + Math.random()*10, Ni: 2 + Math.random()*15, Co: 0.5 + Math.random()*3 }
-      };
-    }
-
-    function startEmulator() {
-      document.getElementById('btn-emulator').classList.add('hidden');
-      document.getElementById('btn-stop').classList.remove('hidden');
-      emulatorInterval = setInterval(async () => {
-        const data = generateReading();
-        await db.collection('water_readings').add(data);
-        updateAdminCharts(data);
-        addUserTableRow(data);
-      }, 5000);
-    }
-
-    function stopEmulator() {
-      clearInterval(emulatorInterval);
-      document.getElementById('btn-emulator').classList.remove('hidden');
-      document.getElementById('btn-stop').classList.add('hidden');
-    }
-
-    const charts = {};
-    function initCharts() {
-      const config = (label, color) => ({
-        type: 'line',
-        data: { labels: [], datasets: [{ label, data: [], borderColor: color, tension: 0.3, fill: false }] },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false,
-          scales: { x: { ticks: { maxRotation: 45, minRotation: 45 } } },
-          animation: { duration: 0 }
-        }
-      });
-      charts.temp = new Chart(document.getElementById('chart-temp'), config('Температура (°C)', '#ef4444'));
-      charts.ph = new Chart(document.getElementById('chart-ph'), config('pH', '#3b82f6'));
-      charts.nitrates = new Chart(document.getElementById('chart-nitrates'), config('Нитраты (мг/л)', '#10b981'));
-      charts.cod = new Chart(document.getElementById('chart-cod'), config('ХПК (мг O₂/л)', '#f59e0b'));
-    }
-
-    function sortByTimestamp(dataArray) {
-      return dataArray.sort((a, b) => a.timestamp - b.timestamp);
-    }
-
-    function updateAdminCharts(newData) {
-      let allData = [];
-      ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
-        if (charts[key].data.labels.length > 0) {
-          for (let i = 0; i < charts[key].data.labels.length; i++) {
-            const timeStr = charts[key].data.labels[i];
-            const timeParts = timeStr.split(':');
-            const now = new Date();
-            const time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 
-                                  parseInt(timeParts[0]), parseInt(timeParts[1]), parseInt(timeParts[2] || 0));
-            allData.push({ timestamp: time.getTime(), [key]: charts[key].data.datasets[0].data[i] });
-          }
-        }
-      });
-      allData.push(newData);
-      allData = sortByTimestamp(allData);
-      if (allData.length > 20) allData = allData.slice(-20);
-      
-      ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
-        const chart = charts[key];
-        chart.data.labels = allData.map(item => new Date(item.timestamp).toLocaleTimeString('ru-RU'));
-        chart.data.datasets[0].data = allData.map(item => item[key]);
-        chart.update();
-      });
-    }
-
-    function addUserTableRow(data) {
-      const tbody = document.querySelector('#data-table tbody');
-      const row = document.createElement('tr');
-      const status = checkStatus(data).overall;
-      const time = new Date(data.timestamp).toLocaleTimeString('ru-RU');
-      row.innerHTML = `<td>${time}</td><td>${data.ph.toFixed(2)}</td><td>${data.temp.toFixed(1)}</td><td>${data.nitrates.toFixed(1)}</td><td>${data.cod.toFixed(1)}</td><td><span class="status ${status}">${status}</span></td>`;
-      if (tbody.firstChild) tbody.insertBefore(row, tbody.firstChild);
-      else tbody.appendChild(row);
-      if(tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
-    }
-
-    const thresholds = {
-      ph: { min: 6.5, max: 8.5, norm: 'pH в норме', warn: 'Кислотность отклоняется', crit: 'Критическое значение pH' },
-      nitrates: { min: 0, max: 45, norm: 'Нитраты в пределах ПДК', warn: 'Повышенное содержание', crit: 'Опасное превышение' },
-      cod: { min: 0, max: 30, norm: 'ХПК в норме', warn: 'Высокая органическая нагрузка', crit: 'Сильное загрязнение' },
-      phosphates: { min: 0, max: 3.5, norm: 'Фосфаты в норме', warn: 'Риск эвтрофикации', crit: 'Критический уровень' }
-    };
-
-    function checkStatus(data) {
-      let overall = 'normal';
-      const params = [];
-      for(const [key, rule] of Object.entries(thresholds)) {
-        const val = data[key];
-        if(val > rule.max) {
-          overall = 'critical';
-          params.push({ key, status: 'crit', msg: rule.crit });
-        } else if(val < rule.min || val > rule.max * 0.8) {
-          if (overall !== 'critical') overall = 'warning';
-          params.push({ key, status: 'warn', msg: rule.warn });
-        } else {
-          params.push({ key, status: 'normal', msg: rule.norm });
-        }
-      }
-      return { overall, params };
-    }
-
-    function renderUserView(data) {
-      const { overall, params } = checkStatus(data);
-      document.getElementById('user-status').className = `status ${overall}`;
-      document.getElementById('user-status').textContent = overall === 'normal' 
-        ? '✅ Вода соответствует нормативам' 
-        : (overall === 'warning' ? '⚠️ Обнаружены отклонения от норм' : '❌ Критическое загрязнение воды!');
-      
-      const grid = document.getElementById('user-params');
-      grid.innerHTML = params.map(p => 
-        `<div class="param-card ${p.status}"><strong>${p.key.toUpperCase()}</strong><br>${p.msg}</div>`
-      ).join('');
-      
-      const recs = [];
-      if(overall !== 'normal') {
-        if(params.some(p => p.key === 'nitrates' && p.status !== 'normal')) 
-          recs.push('Установить фильтр обратного осмоса или систему денитрификации.');
-        if(params.some(p => p.key === 'cod' && p.status !== 'normal')) 
-          recs.push('Провести аэрацию воды, проверить источники органических стоков.');
-        if(params.some(p => p.key === 'phosphates' && p.status !== 'normal')) 
-          recs.push('Ограничить внесение удобрений вблизи водоёма, рассмотреть сорбционные фильтры.');
-        if(overall === 'critical') {
-          recs.unshift('❗ Немедленно прекратите использование воды! Обратитесь в службу экологического контроля.');
-        }
-      } else {
-        recs.push('Продолжать регулярный мониторинг. Вода безопасна для хозяйственно-бытового использования.');
-      }
-      document.getElementById('recommendations').innerHTML = recs.map(r => `<li>${r}</li>`).join('');
-    }
-
-    // 🔽 ФУНКЦИЯ СКАЧИВАНИЯ EXCEL (ИСПРАВЛЕНА)
-    async function downloadExcelData() {
-      // Проверяем, загрузилась ли библиотека
-      if (typeof XLSX === 'undefined') {
-        alert('Ошибка: Библиотека XLSX не загрузилась. Проверьте подключение к интернету.');
-        return;
-      }
-
-      const btns = [document.getElementById('btn-download-user'), document.getElementById('btn-download-admin')];
-      const originalTexts = btns.map(b => b ? b.textContent : '');
-      
-      try {
-        btns.forEach(b => { if(b) { b.textContent = '⏳ Подготовка...'; b.disabled = true; } });
-        
-        const snapshot = await db.collection('water_readings').orderBy('timestamp', 'desc').limit(500).get();
-        if (snapshot.empty) {
-          alert('Нет данных для экспорта. Запустите эмулятор или дождитесь поступления данных.');
-          return;
-        }
-
-        const data = [];
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          const statusObj = checkStatus(d);
-          data.push({
-            'Дата и время': d.timestamp ? new Date(d.timestamp).toLocaleString('ru-RU') : 'Нет времени',
-            'Водоём': d.waterbody || 'Не указан',
-            'pH': d.ph?.toFixed(2) || '',
-            'Температура (°C)': d.temp?.toFixed(1) || '',
-            'Нитраты (мг/л)': d.nitrates?.toFixed(1) || '',
-            'Фосфаты (мг/л)': d.phosphates?.toFixed(2) || '',
-            'ХПК (мг O₂/л)': d.cod?.toFixed(1) || '',
-            'Прозрачность (см)': d.transparency?.toFixed(0) || '',
-            'Фитопланктон (мг/л)': d.phytoplankton?.toFixed(0) || '',
-            'Медь Cu (мкг/л)': d.heavy_metals?.Cu?.toFixed(2) || '',
-            'Никель Ni (мкг/л)': d.heavy_metals?.Ni?.toFixed(2) || '',
-            'Кобальт Co (мкг/л)': d.heavy_metals?.Co?.toFixed(2) || '',
-            'Статус': statusObj.overall === 'normal' ? 'Норма' : (statusObj.overall === 'warning' ? 'Отклонение' : 'Критично'),
-            'Рекомендация': statusObj.overall === 'normal' ? 'Продолжать мониторинг' : 'Требуется очистка/контроль'
-          });
-        });
-
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Мониторинг воды");
-
-        const colWidths = Object.keys(data[0]).map(key => ({
-          wch: Math.max(key.length, ...data.map(row => String(row[key] || '').length)) + 2
-        }));
-        ws['!cols'] = colWidths;
-
-        const fileName = `AquaMonitor_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-      } catch (e) {
-        console.error(e);
-        alert('Ошибка при скачивании: ' + e.message);
-      } finally {
-        btns.forEach((b, i) => { 
-          if(b) { b.textContent = originalTexts[i]; b.disabled = false; } 
-        });
-      }
-    }
-
-    document.getElementById('btn-download-user').onclick = downloadExcelData;
-    document.getElementById('btn-download-admin').onclick = downloadExcelData;
-
-    let isLogin = true;
-    const modal = document.getElementById('auth-modal');
-    const landingPage = document.getElementById('landing-page');
-    
-    document.getElementById('btn-login').onclick = () => modal.classList.remove('hidden');
-    document.getElementById('hero-login').onclick = (e) => { e.preventDefault(); modal.classList.remove('hidden'); };
-    document.getElementById('close-modal').onclick = () => modal.classList.add('hidden');
-    
-    document.getElementById('auth-switch-link').onclick = (e) => {
-      e.preventDefault();
-      isLogin = !isLogin;
-      document.getElementById('auth-title').textContent = isLogin ? 'Вход в систему' : 'Регистрация';
-      document.getElementById('auth-action').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
-      document.getElementById('auth-switch-text').textContent = isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?';
-      document.getElementById('auth-switch-link').textContent = isLogin ? 'Зарегистрироваться' : 'Войти';
-      document.getElementById('role-select').classList.toggle('hidden', isLogin);
-    };
-
-    document.getElementById('auth-action').onclick = async () => {
-      const email = document.getElementById('email').value;
-      const pass = document.getElementById('password').value;
-      const role = document.getElementById('role-select').value;
-      try {
-        if(isLogin) {
-          await auth.signInWithEmailAndPassword(email, pass);
-        } else {
-          if(pass.length < 6) { alert('Пароль должен быть не менее 6 символов'); return; }
-          const cred = await auth.createUserWithEmailAndPassword(email, pass);
-          await db.collection('users').doc(cred.user.uid).set({ 
-            email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() 
-          });
-        }
-        modal.classList.add('hidden');
-      } catch(e) {
-        console.error('Ошибка:', e);
-        if(e.code === 'auth/invalid-email') alert('Неверный формат email');
-        else if(e.code === 'auth/weak-password') alert('Пароль слишком слабый (минимум 6 символов)');
-        else if(e.code === 'auth/email-already-in-use') alert('Этот email уже зарегистрирован');
-        else if(e.code === 'auth/invalid-credential') alert('Неверный email или пароль');
-        else alert('Ошибка: ' + e.message);
-      }
-    };
-
-    document.getElementById('btn-logout').onclick = () => auth.signOut();
-
-    auth.onAuthStateChanged(async user => {
-      if(!user) {
-        document.getElementById('btn-login').classList.remove('hidden');
-        document.getElementById('header-controls').classList.add('hidden');
-        landingPage.classList.remove('hidden');
-        document.getElementById('user-view').classList.add('hidden');
-        document.getElementById('admin-view').classList.add('hidden');
-        stopEmulator();
-        return;
-      }
-      
-      document.getElementById('btn-login').classList.add('hidden');
-      document.getElementById('header-controls').classList.remove('hidden');
-      landingPage.classList.add('hidden');
-      
-      const userDoc = await db.collection('users').doc(user.uid).get();
-      const role = userDoc.exists ? userDoc.data().role : 'user';
-      document.getElementById('user-role').textContent = role === 'admin' ? '👑 Администратор' : '👤 Пользователь';
-      
-      document.getElementById('user-view').classList.toggle('hidden', role !== 'user');
-      document.getElementById('admin-view').classList.toggle('hidden', role !== 'admin');
-      
-      if(role === 'admin') {
-        initCharts();
-        startEmulator();
-        loadAdminHistory();
-      } else {
-        loadUserLatest();
-      }
-    });
-
-    function loadAdminHistory() {
-      db.collection('water_readings').orderBy('timestamp', 'desc').limit(15).onSnapshot(snap => {
-        const allData = [];
-        snap.forEach(doc => allData.push(doc.data()));
-        const sortedData = sortByTimestamp([...allData]);
-        document.querySelector('#data-table tbody').innerHTML = '';
-        sortedData.forEach(data => updateAdminCharts(data));
-        [...allData].reverse().forEach(data => addUserTableRow(data));
-      });
-    }
-
-    function loadUserLatest() {
-      db.collection('water_readings').orderBy('timestamp', 'desc').limit(1).onSnapshot(snap => {
-        if(!snap.empty) renderUserView(snap.docs[0].data());
-      });
-    }
-  </script>
-</body>
-</html>
+        ph: 7.0 + (Math.random() * 1.5 - 
