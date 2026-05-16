@@ -220,43 +220,47 @@
     let isMapInitialized = false; // Флаг: была ли карта уже создана
 
     // 🗺️ ИНИЦИАЛИЗАЦИЯ КАРТЫ (MAPLIBRE GL JS)
-    function initMap() {
-      // Если карта уже создана, просто обновляем её размеры и выходим
-      if (isMapInitialized && map) {
-        map.resize();
-        return;
-      }
+function initMap() {
+  // Если карта уже создана, просто обновляем её размеры и выходим
+  if (isMapInitialized && map) {
+    map.resize();
+    return;
+  }
 
-      map = new maplibregl.Map({
-        container: 'map',
-        style: 'https://tiles.openfreemap.org/styles/liberty', 
-        center: [37.6173, 55.7558], 
-        zoom: 6
-      });
+  map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://tiles.openfreemap.org/styles/liberty', 
+    center: [37.6173, 55.7558], 
+    zoom: 6
+  });
 
-      map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-      // Добавляем маркеры
-      Object.values(waterbodies).forEach(wb => {
-        const marker = new maplibregl.Marker({ color: '#2563eb', scale: 0.8 })
-          .setLngLat([wb.location.lng, wb.location.lat])
-          .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(`
-            <div style="padding: 8px; max-width: 220px; font-family: system-ui, sans-serif;">
-              <h3 style="margin: 0 0 6px 0; font-size: 1rem; color: #2563eb;">${wb.name}</h3>
-              <p style="margin: 4px 0; font-size: 0.85rem; color: #555; line-height: 1.4;">${wb.description}</p>
-              <button onclick="window.selectWaterbodyFromMap('${wb.id.replace(/'/g, "\\'")}')"</button>
-                      style="margin-top: 8px; padding: 5px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
-                Выбрать водоём
-              </button>
-            </div>
-          `))
-          .addTo(map);
-        
-        markers.push(marker);
-      });
+  // Обработка ошибок загрузки карты (чтобы не ломало весь сайт)
+  map.on('error', (e) => {
+    console.warn('MapLibre error:', e.error);
+  });
 
-      isMapInitialized = true;
-    }
+  // Добавляем маркеры
+  Object.values(waterbodies).forEach(wb => {
+    const marker = new maplibregl.Marker({ color: '#2563eb', scale: 0.8 })
+      .setLngLat([wb.location.lng, wb.location.lat])
+      .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(`
+        <div style="padding: 8px; max-width: 220px; font-family: system-ui, sans-serif;">
+          <h3 style="margin: 0 0 6px 0; font-size: 1rem; color: #2563eb;">${wb.name}</h3>
+          <p style="margin: 4px 0; font-size: 0.85rem; color: #555; line-height: 1.4;">${wb.description}</p>
+          <button onclick="window.selectWaterbodyFromMap('${wb.id.replace(/'/g, "\\'")}')">
+            Выбрать водоём
+          </button>
+        </div>
+      `))
+      .addTo(map);
+    
+    markers.push(marker);
+  });
+
+  isMapInitialized = true;
+}
 
     // Функция для выбора водоема из карты (глобальная область)
     window.selectWaterbodyFromMap = function(id) {
@@ -522,18 +526,41 @@
     }
 
     // 🎛 Управление отображением
-    function showDashboard() {
-      if (!selectedWaterbodyId) return;
-      const wb = waterbodies[selectedWaterbodyId];
+// ✅ ИСПРАВЛЕННАЯ ВЕРСИЯ:
+function showDashboard() {
+  if (!selectedWaterbodyId) return;
+  const wb = waterbodies[selectedWaterbodyId];
+  
+  // Обновляем информацию о водоёме
+  document.getElementById('selected-waterbody-name').textContent = wb.name;
+  document.getElementById('selected-waterbody-desc').textContent = wb.description;
+  document.getElementById('admin-waterbody-name').textContent = wb.name;
+  document.getElementById('admin-waterbody-desc').textContent = wb.description;
+  
+  // Скрываем экраны выбора
+  document.getElementById('landing-page').classList.add('hidden');
+  document.getElementById('waterbody-selection').classList.add('hidden');
+  
+  // ✅ ПОКАЗЫВАЕМ нужную панель в зависимости от роли пользователя
+  const user = auth.currentUser;
+  if (user) {
+    db.collection('users').doc(user.uid).get().then(userDoc => {
+      const role = userDoc.exists ? userDoc.data().role : 'user';
       
-      document.getElementById('selected-waterbody-name').textContent = wb.name;
-      document.getElementById('selected-waterbody-desc').textContent = wb.description;
-      document.getElementById('admin-waterbody-name').textContent = wb.name;
-      document.getElementById('admin-waterbody-desc').textContent = wb.description;
-      
-      document.getElementById('landing-page').classList.add('hidden');
-      document.getElementById('waterbody-selection').classList.add('hidden');
-    }
+      if (role === 'admin') {
+        document.getElementById('admin-view').classList.remove('hidden');
+        document.getElementById('user-view').classList.add('hidden');
+        if (!charts.temp) initCharts();
+        if (!emulatorInterval) startEmulator();
+        loadAdminHistory();
+      } else {
+        document.getElementById('user-view').classList.remove('hidden');
+        document.getElementById('admin-view').classList.add('hidden');
+        loadUserLatest();
+      }
+    });
+  }
+}
 
     // 🛠 ИСПРАВЛЕННАЯ ФУНКЦИЯ ПОКАЗА ВЫБОРА ВОДОЁМА
     function showWaterbodySelection() {
