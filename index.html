@@ -420,7 +420,13 @@ const firebaseConfig = {
           const d = doc.data();
           const statusObj = checkStatus(d);
           data.push({
-            'Дата и время': d.timestamp ? new Date(d.timestamp).toLocaleString('ru-RU') : 'Нет времени',
+            'Дата и время': (() => {
+  if (!d.timestamp) return 'Нет времени';
+  if (d.timestamp.toDate) return d.timestamp.toDate().toLocaleString('ru-RU'); // Для объектов Firebase
+  if (typeof d.timestamp === 'number') return new Date(d.timestamp).toLocaleString('ru-RU'); // Для чисел
+  const parsed = new Date(d.timestamp);
+  return isNaN(parsed.getTime()) ? 'Нет времени' : parsed.toLocaleString('ru-RU');
+})(),
             'Водоём': d.waterbody || 'Не указан',
             'pH': d.ph?.toFixed(2) || '',
             'Температура (°C)': d.temp?.toFixed(1) || '',
