@@ -8,7 +8,7 @@
   <!-- Chart.js для графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <!-- SheetJS для генерации Excel (ИСПРАВЛЕНО: используем cdnjs) -->
+  <!-- SheetJS для генерации Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   
   <!-- Firebase SDK -->
@@ -44,9 +44,12 @@
     .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; }
     
     .hero {
-      text-align: center; padding: 4rem 2rem;
+      text-align: center;
+      padding: 4rem 2rem;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white; border-radius: 12px; margin-bottom: 2rem;
+      color: white;
+      border-radius: 12px;
+      margin-bottom: 2rem;
     }
     .hero h1 { font-size: 3rem; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
     .hero .water-drop { font-size: 4rem; margin-bottom: 1rem; }
@@ -91,145 +94,4 @@
     <div id="landing-page">
       <div class="hero">
         <div class="water-drop">💧</div>
-        <h1>AquaMonitor</h1>
-        <p>Современная система мониторинга и анализа качества воды в водоёмах. 
-           Контролируйте состояние водных ресурсов в реальном времени и получайте рекомендации по улучшению качества воды.</p>
-        <a href="#" class="cta-button" id="hero-login">Начать мониторинг →</a>
-      </div>
-
-      <div class="features">
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>Анализ показателей</h3>
-          <p>Отслеживайте ключевые параметры качества воды: pH, нитраты, фосфаты, ХПК и другие показатели в реальном времени</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">🗺️</div>
-          <h3>Карта водоёмов</h3>
-          <p>Визуализация данных на интерактивной карте с кластеризацией и детальным описанием каждой точки мониторинга</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">📈</div>
-          <h3>Графики и отчёты</h3>
-          <p>Построение графиков изменения параметров, экспорт данных и автоматическая оценка соответствия нормативам</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">💡</div>
-          <h3>Рекомендации</h3>
-          <p>Получайте персонализированные рекомендации по очистке воды и улучшению её качества на основе анализа</p>
-        </div>
-      </div>
-
-      <div class="info-section">
-        <h2>🎯 Возможности системы</h2>
-        <div class="grid" style="margin-top: 1.5rem;">
-          <div>
-            <h3 style="color: var(--primary); margin-bottom: 1rem;">Для пользователей:</h3>
-            <ul>
-              <li>Проверка качества воды по вашим данным</li>
-              <li>Автоматическая оценка соответствия нормативам</li>
-              <li>Получение рекомендаций по очистке</li>
-              <li>Просмотр общей статистики по водоёмам</li>
-              <li>Экспорт результатов в Excel</li>
-            </ul>
-          </div>
-          <div>
-            <h3 style="color: var(--primary); margin-bottom: 1rem;">Для администраторов:</h3>
-            <ul>
-              <li>Управление данными мониторинга</li>
-              <li>Добавление и редактирование точек отбора проб</li>
-              <li>Просмотр графиков в реальном времени</li>
-              <li>Управление слоями и категориями</li>
-              <li>Импорт данных из Excel</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Модальное окно авторизации -->
-    <div id="auth-modal" class="hidden">
-      <div class="modal-content">
-        <h3 id="auth-title">Вход в систему</h3>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Пароль">
-        <select id="role-select" class="hidden">
-          <option value="user">Пользователь</option>
-          <option value="admin">Администратор</option>
-        </select>
-        <button id="auth-action" class="btn btn-primary" style="width:100%; margin-top:0.5rem;">Войти</button>
-        <p style="margin-top:0.5rem; font-size:0.9rem; color:#64748b;">
-          <span id="auth-switch-text">Нет аккаунта?</span>
-          <a href="#" id="auth-switch-link">Зарегистрироваться</a>
-        </p>
-        <button id="close-modal" class="btn" style="margin-top:0.5rem; width:100%;">Закрыть</button>
-      </div>
-    </div>
-
-    <!-- Панель пользователя -->
-    <div id="user-view" class="hidden">
-      <div class="card">
-        <h3>📊 Сводка по водоёму</h3>
-        <div id="user-status" class="status">Загрузка...</div>
-        <div class="grid" id="user-params"></div>
-        <h4 style="margin-top:1.5rem;">💡 Рекомендуемые меры</h4>
-        <ul id="recommendations" style="margin-left:1.5rem; margin-top:0.5rem;"></ul>
-        <button id="btn-download-user" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">📥 Скачать данные (Excel)</button>
-      </div>
-    </div>
-
-    <!-- Панель администратора -->
-    <div id="admin-view" class="hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
-          <h3>📈 Панель администратора</h3>
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button id="btn-download-admin" class="btn btn-primary">📥 Excel</button>
-            <button id="btn-emulator" class="btn btn-success">▶ Запустить эмулятор</button>
-            <button id="btn-stop" class="btn btn-danger hidden">⏹ Остановить</button>
-          </div>
-        </div>
-        <div class="grid">
-          <div><canvas id="chart-temp"></canvas></div>
-          <div><canvas id="chart-ph"></canvas></div>
-          <div><canvas id="chart-nitrates"></canvas></div>
-          <div><canvas id="chart-cod"></canvas></div>
-        </div>
-        <h4 style="margin-top:1rem;">📋 Последние показания</h4>
-        <table id="data-table">
-          <thead><tr><th>Время</th><th>pH</th><th>T°C</th><th>Нитраты</th><th>ХПК</th><th>Статус</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    let emulatorInterval = null;
-    const waterbody = "Нижний фермский пруд";
-    
-    // Функция генерации данных, принимающая время (timestamp)
-    function generateReading(customTime) {
-      const time = customTime || new Date();
-      const month = time.getMonth();
-      const seasonalShift = Math.sin((month - 4) * Math.PI / 6) * 2;
-      
-      return {
-        timestamp: time.getTime(), // Используем переданное время или текущее
-        waterbody,
-        ph: 7.0 + (Math.random() * 1.5 - 
+        <h1
