@@ -216,28 +216,54 @@
     let yandexPlacemarks = [];
     let emulatorInterval = null;
 
-    // 🗺️ ИНИЦИАЛИЗАЦИЯ КАРТЫ (ЯНДЕКС)
-    function initMap() {
-      ymaps.ready(() => {
-        yandexMap = new ymaps.Map('map', {
-          center: [55.7558, 37.6173],
-          zoom: 6,
-          controls: ['zoomControl', 'searchControl']
-        });
+// 🗺️ ИНИЦИАЛИЗАЦИЯ КАРТЫ (ЯНДЕКС)
+function initMap() {
+  ymaps.ready(() => {
+    yandexMap = new ymaps.Map('map', {
+      center: [55.7558, 37.6173],
+      zoom: 6,
+      controls: ['zoomControl', 'searchControl']
+    });
 
-        Object.values(waterbodies).forEach(wb => {
-          const placemark = new ymaps.Placemark([wb.location.lat, wb.location.lng], {
-            balloonContent: `<b>${wb.name}</b><br>${wb.description}`
-          }, {
-            preset: 'islands#blueWaterIcon'
-          });
+    Object.values(waterbodies).forEach(wb => {
+      // Создаем содержимое балуна
+      const balloonContent = `
+        <div style="padding: 10px; max-width: 300px;">
+          <h3 style="margin: 0 0 10px 0; color: #2563eb;">${wb.name}</h3>
+          <p style="margin: 5px 0;"><strong>Тип:</strong> ${wb.characteristics.type}</p>
+          <p style="margin: 5px 0;"><strong>Глубина:</strong> ${wb.characteristics.depth}</p>
+          <p style="margin: 5px 0;"><strong>Площадь:</strong> ${wb.characteristics.area}</p>
+          <p style="margin: 5px 0;"><strong>Назначение:</strong> ${wb.characteristics.usage}</p>
+          <p style="margin: 10px 0 5px 0;">${wb.description}</p>
+          <button onclick="selectWaterbodyFromMap('${wb.id}')" 
+                  style="margin-top: 10px; padding: 5px 15px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Выбрать водоём
+          </button>
+        </div>
+      `;
 
-          placemark.events.add('click', () => selectWaterbody(wb.id));
-          yandexMap.geoObjects.add(placemark);
-          yandexPlacemarks.push(placemark);
-        });
+      const placemark = new ymaps.Placemark([wb.location.lat, wb.location.lng], {
+        balloonContentHeader: wb.name,
+        balloonContentBody: balloonContent,
+        hintContent: wb.name
+      }, {
+        preset: 'islands#blueWaterIcon',
+        draggable: false
       });
-    }
+
+      yandexMap.geoObjects.add(placemark);
+      yandexPlacemarks.push(placemark);
+    });
+  });
+}
+
+// Функция для выбора водоема из карты (вызывается из балуна)
+function selectWaterbodyFromMap(id) {
+  selectWaterbody(id);
+  window.selectWaterbodyFromMap = selectWaterbodyFromMap;
+  // Закрываем все балуны
+  yandexPlacemarks.forEach(pm => pm.balloon.close());
+}
 
     // 📋 ОТОБРАЖЕНИЕ СПИСКА ВОДОЁМОВ
     function renderWaterbodyList() {
