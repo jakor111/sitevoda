@@ -8,10 +8,14 @@
   <!-- Chart.js для графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <!-- SheetJS для генерации Excel (ИСПРАВЛЕНО: используем cdnjs) -->
+  <!-- Leaflet для карт -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- SheetJS для Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -21,7 +25,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background: var(--bg); color: var(--text); line-height: 1.5; }
     header { background: var(--primary); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
-    .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+    .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
     .card { background: var(--card); border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
     .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
     .btn-primary { background: var(--primary); color: white; }
@@ -39,41 +43,88 @@
     .param-card.crit { border-color: var(--danger); }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
     th, td { padding: 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
-    .chart-container { position: relative; height: 300px; margin: 1rem 0; }
     #auth-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; }
     
+    /* Стили для карты и выбора водоемов */
+    .waterbody-selector {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .waterbody-card {
+      flex: 1;
+      min-width: 250px;
+      max-width: 350px;
+      padding: 1.5rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    .waterbody-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 12px rgba(0,0,0,0.1);
+    }
+    .waterbody-card.selected {
+      border-color: var(--primary);
+      background: #eff6ff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+    .waterbody-card h3 {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      font-size: 1.25rem;
+    }
+    .waterbody-card p {
+      color: #64748b;
+      font-size: 0.9rem;
+      margin: 0.25rem 0;
+    }
+    #map {
+      height: 400px;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      z-index: 1;
+    }
+    .waterbody-info {
+      background: #f0f9ff;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      border-left: 4px solid var(--primary);
+    }
+    .waterbody-info h3 {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
     .hero {
-      text-align: center; padding: 4rem 2rem;
+      text-align: center;
+      padding: 4rem 2rem;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white; border-radius: 12px; margin-bottom: 2rem;
+      color: white;
+      border-radius: 12px;
+      margin-bottom: 2rem;
     }
     .hero h1 { font-size: 3rem; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
     .hero .water-drop { font-size: 4rem; margin-bottom: 1rem; }
     .hero p { font-size: 1.25rem; max-width: 800px; margin: 0 auto 2rem; opacity: 0.95; }
-    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
-    .feature-card {
-      background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      text-align: center; transition: transform 0.3s ease;
-    }
-    .feature-card:hover { transform: translateY(-5px); box-shadow: 0 8px 12px rgba(0,0,0,0.15); }
-    .feature-icon { font-size: 3rem; margin-bottom: 1rem; }
-    .feature-card h3 { color: var(--primary); margin-bottom: 0.75rem; font-size: 1.5rem; }
-    .feature-card p { color: #64748b; line-height: 1.6; }
     .cta-button {
-      display: inline-block; padding: 1rem 2.5rem; background: white; color: var(--primary);
-      border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem;
-      margin-top: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      display: inline-block;
+      padding: 1rem 2.5rem;
+      background: white;
+      color: var(--primary);
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .cta-button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.2); }
-    .info-section {
-      background: white; padding: 2rem; border-radius: 12px; margin-top: 2rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .info-section h2 { color: var(--primary); margin-bottom: 1rem; text-align: center; }
-    .info-section ul { list-style: none; padding-left: 0; }
-    .info-section li { padding: 0.5rem 0; padding-left: 1.5rem; position: relative; }
-    .info-section li:before { content: "✓"; position: absolute; left: 0; color: var(--success); font-weight: bold; }
   </style>
 </head>
 <body>
@@ -96,58 +147,6 @@
            Контролируйте состояние водных ресурсов в реальном времени и получайте рекомендации по улучшению качества воды.</p>
         <a href="#" class="cta-button" id="hero-login">Начать мониторинг →</a>
       </div>
-
-      <div class="features">
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>Анализ показателей</h3>
-          <p>Отслеживайте ключевые параметры качества воды: pH, нитраты, фосфаты, ХПК и другие показатели в реальном времени</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">🗺️</div>
-          <h3>Карта водоёмов</h3>
-          <p>Визуализация данных на интерактивной карте с кластеризацией и детальным описанием каждой точки мониторинга</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">📈</div>
-          <h3>Графики и отчёты</h3>
-          <p>Построение графиков изменения параметров, экспорт данных и автоматическая оценка соответствия нормативам</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">💡</div>
-          <h3>Рекомендации</h3>
-          <p>Получайте персонализированные рекомендации по очистке воды и улучшению её качества на основе анализа</p>
-        </div>
-      </div>
-
-      <div class="info-section">
-        <h2>🎯 Возможности системы</h2>
-        <div class="grid" style="margin-top: 1.5rem;">
-          <div>
-            <h3 style="color: var(--primary); margin-bottom: 1rem;">Для пользователей:</h3>
-            <ul>
-              <li>Проверка качества воды по вашим данным</li>
-              <li>Автоматическая оценка соответствия нормативам</li>
-              <li>Получение рекомендаций по очистке</li>
-              <li>Просмотр общей статистики по водоёмам</li>
-              <li>Экспорт результатов в Excel</li>
-            </ul>
-          </div>
-          <div>
-            <h3 style="color: var(--primary); margin-bottom: 1rem;">Для администраторов:</h3>
-            <ul>
-              <li>Управление данными мониторинга</li>
-              <li>Добавление и редактирование точек отбора проб</li>
-              <li>Просмотр графиков в реальном времени</li>
-              <li>Управление слоями и категориями</li>
-              <li>Импорт данных из Excel</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Модальное окно авторизации -->
@@ -169,8 +168,21 @@
       </div>
     </div>
 
+    <!-- Выбор водоема -->
+    <div id="waterbody-selection" class="hidden">
+      <h2 style="margin-bottom: 1rem;">🗺️ Выберите водоём для мониторинга</h2>
+      <div id="map"></div>
+      <div class="waterbody-selector" id="waterbody-list"></div>
+    </div>
+
     <!-- Панель пользователя -->
     <div id="user-view" class="hidden">
+      <div class="waterbody-info" id="current-waterbody-info">
+        <h3 id="selected-waterbody-name">Выбранный водоём</h3>
+        <p id="selected-waterbody-desc">Описание водоёма</p>
+        <button id="btn-change-waterbody" class="btn btn-primary" style="margin-top: 0.5rem;">🔄 Сменить водоём</button>
+      </div>
+      
       <div class="card">
         <h3>📊 Сводка по водоёму</h3>
         <div id="user-status" class="status">Загрузка...</div>
@@ -183,6 +195,12 @@
 
     <!-- Панель администратора -->
     <div id="admin-view" class="hidden">
+      <div class="waterbody-info" id="admin-waterbody-info">
+        <h3 id="admin-waterbody-name">Выбранный водоём</h3>
+        <p id="admin-waterbody-desc">Описание водоёма</p>
+        <button id="admin-btn-change-waterbody" class="btn btn-primary" style="margin-top: 0.5rem;">🔄 Сменить водоём</button>
+      </div>
+
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
           <h3>📈 Панель администратора</h3>
@@ -208,66 +226,217 @@
   </div>
 
   <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+    // 🔧 Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.firebasestorage.app",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // 🗺️ БАЗА ДАННЫХ ВОДОЁМОВ
+    const waterbodies = {
+      'lower-farm-pond': {
+        id: 'lower-farm-pond',
+        name: 'Нижний фермский пруд',
+        description: 'Водоём в Тимирязевском районе г. Москвы. Характеризуется сезонным цветением в летний период.',
+        location: { lat: 55.8273, lng: 37.5456 },
+        characteristics: {
+          type: 'прудовое',
+          depth: '2-4 м',
+          area: '3.5 га',
+          usage: 'рекреационное'
+        },
+        baseline: {
+          ph: { min: 6.5, max: 8.0, avg: 7.2 },
+          temp: { winter: 2, summer: 22 },
+          nitrates: { min: 4, max: 25, avg: 12 },
+          phosphates: { min: 0.1, max: 1.6, avg: 0.6 },
+          cod: { min: 10, max: 36, avg: 20 }
+        }
+      },
+      'oka-river-ryazan': {
+        id: 'oka-river-ryazan',
+        name: 'Река Ока (г. Рязань)',
+        description: 'Крупная река, протекающая через г. Рязань. Подвержена антропогенному воздействию.',
+        location: { lat: 54.6292, lng: 39.7352 },
+        characteristics: {
+          type: 'речное',
+          depth: '3-8 м',
+          area: 'протяжённость 1500 км',
+          usage: 'хозяйственно-питьевое'
+        },
+        baseline: {
+          ph: { min: 6.8, max: 8.2, avg: 7.4 },
+          temp: { winter: 1, summer: 21 },
+          nitrates: { min: 5, max: 28, avg: 14 },
+          phosphates: { min: 0.1, max: 1.8, avg: 0.7 },
+          cod: { min: 12, max: 40, avg: 24 }
+        }
+      },
+      'seliger-lake': {
+        id: 'seliger-lake',
+        name: 'Озеро Селигер',
+        description: 'Крупное озеро в Тверской области. Популярный объект рекреации и туризма.',
+        location: { lat: 57.2, lng: 33.5 },
+        characteristics: {
+          type: 'озёрное',
+          depth: '5-15 м',
+          area: '260 км²',
+          usage: 'рекреационное'
+        },
+        baseline: {
+          ph: { min: 7.0, max: 8.5, avg: 7.6 },
+          temp: { winter: 1, summer: 20 },
+          nitrates: { min: 3, max: 18, avg: 8 },
+          phosphates: { min: 0.05, max: 1.2, avg: 0.4 },
+          cod: { min: 8, max: 28, avg: 16 }
+        }
+      },
+      'moscow-river': {
+        id: 'moscow-river',
+        name: 'Река Москва (центр)',
+        description: 'Река в черте г. Москвы. Высокая антропогенная нагрузка.',
+        location: { lat: 55.7558, lng: 37.6173 },
+        characteristics: {
+          type: 'речное',
+          depth: '2-6 м',
+          area: 'протяжённость 502 км',
+          usage: 'техническое'
+        },
+        baseline: {
+          ph: { min: 6.5, max: 8.0, avg: 7.1 },
+          temp: { winter: 2, summer: 23 },
+          nitrates: { min: 8, max: 35, avg: 18 },
+          phosphates: { min: 0.2, max: 2.5, avg: 1.0 },
+          cod: { min: 15, max: 45, avg: 28 }
+        }
+      }
+    };
+
+    let selectedWaterbodyId = null;
+    let map = null;
+    let markers = [];
     let emulatorInterval = null;
-    const waterbody = "Нижний фермский пруд";
-    
-    // Функция генерации данных, принимающая время (timestamp)
-    function generateReading(customTime) {
-      const time = customTime || new Date();
-      const month = time.getMonth();
-      const seasonalShift = Math.sin((month - 4) * Math.PI / 6) * 2;
+
+    // 🗺️ ИНИЦИАЛИЗАЦИЯ КАРТЫ
+    function initMap() {
+      map = L.map('map').setView([55.7558, 37.6173], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Добавляем маркеры для всех водоёмов
+      Object.values(waterbodies).forEach(wb => {
+        const marker = L.marker([wb.location.lat, wb.location.lng])
+          .addTo(map)
+          .bindPopup(`<b>${wb.name}</b><br>${wb.description}`);
+        
+        marker.on('click', () => selectWaterbody(wb.id));
+        markers.push(marker);
+      });
+    }
+
+    // 📋 ОТОБРАЖЕНИЕ СПИСКА ВОДОЁМОВ
+    function renderWaterbodyList() {
+      const container = document.getElementById('waterbody-list');
+      container.innerHTML = '';
+
+      Object.values(waterbodies).forEach(wb => {
+        const card = document.createElement('div');
+        card.className = `waterbody-card ${selectedWaterbodyId === wb.id ? 'selected' : ''}`;
+        card.onclick = () => selectWaterbody(wb.id);
+        
+        card.innerHTML = `
+          <h3>${wb.name}</h3>
+          <p><strong>Тип:</strong> ${wb.characteristics.type}</p>
+          <p><strong>Глубина:</strong> ${wb.characteristics.depth}</p>
+          <p><strong>Площадь:</strong> ${wb.characteristics.area}</p>
+          <p><strong>Назначение:</strong> ${wb.characteristics.usage}</p>
+        `;
+        
+        container.appendChild(card);
+      });
+    }
+
+    // ✅ ВЫБОР ВОДОЁМА
+    function selectWaterbody(id) {
+      selectedWaterbodyId = id;
+      const wb = waterbodies[id];
       
+      // Обновляем карту
+      map.setView([wb.location.lat, wb.location.lng], 10);
+      markers.forEach(m => m.closePopup());
+      
+      // Подсвечиваем выбранный маркер
+      markers.forEach((m, idx) => {
+        const wbId = Object.keys(waterbodies)[idx];
+        if (wbId === id) {
+          m.openPopup();
+        }
+      });
+
+      renderWaterbodyList();
+      
+      // Сохраняем выбор в localStorage
+      localStorage.setItem('selectedWaterbody', id);
+      
+      // Показываем панель пользователя/админа
+      showDashboard();
+    }
+
+    // 📊 ГЕНЕРАЦИЯ ДАННЫХ С УЧЁТОМ ВОДОЁМА
+    function generateReading() {
+      const wb = waterbodies[selectedWaterbodyId];
+      if (!wb) return null;
+
+      const now = new Date();
+      const month = now.getMonth();
+      const seasonalShift = Math.sin((month - 4) * Math.PI / 6); // -1 до 1
+      
+      // Генерируем данные на основе базовых характеристик водоёма
       return {
-        timestamp: time.getTime(), // Используем переданное время или текущее
-        waterbody,
-        ph: 7.0 + (Math.random() * 1.5 - 0.75),
-        temp: 12 + seasonalShift + (Math.random() * 8 - 4),
-        nitrates: 10 + (Math.random() * 15),
-        phosphates: 0.2 + (Math.random() * 1.4),
-        cod: 10 + (Math.random() * 10),
-        transparency: 30 + (Math.random() * 20),
-        phytoplankton: 20 + (Math.random() * 60),
-        heavy_metals: { Cu: 1 + Math.random()*10, Ni: 2 + Math.random()*15, Co: 0.5 + Math.random()*3 }
+        timestamp: now.getTime(),
+        waterbodyId: selectedWaterbodyId,
+        waterbodyName: wb.name,
+        ph: wb.baseline.ph.avg + (Math.random() * (wb.baseline.ph.max - wb.baseline.ph.min) / 2 - (wb.baseline.ph.max - wb.baseline.ph.min) / 4),
+        temp: wb.baseline.temp.winter + (wb.baseline.temp.summer - wb.baseline.temp.winter) * ((seasonalShift + 1) / 2) + (Math.random() * 4 - 2),
+        nitrates: wb.baseline.nitrates.avg + (Math.random() * (wb.baseline.nitrates.max - wb.baseline.nitrates.min) / 2),
+        phosphates: wb.baseline.phosphates.avg + (Math.random() * (wb.baseline.phosphates.max - wb.baseline.phosphates.min) / 2),
+        cod: wb.baseline.cod.avg + (Math.random() * (wb.baseline.cod.max - wb.baseline.cod.min) / 2),
+        transparency: 20 + Math.random() * 30,
+        phytoplankton: 15 + Math.random() * 80
       };
     }
 
-    // ИЗМЕНЕННАЯ ФУНКЦИЯ ЭМУЛЯТОРА
     function startEmulator() {
       document.getElementById('btn-emulator').classList.add('hidden');
       document.getElementById('btn-stop').classList.remove('hidden');
       
-      // ГЕНЕРАЦИЯ 50 ТОЧЕК В ПРЕДЕЛАХ ПОСЛЕДНЕГО ЧАСА
+      // Генерируем 50 точек за последний час
       const now = new Date();
       const batchPromises = [];
       
       for (let i = 0; i < 50; i++) {
-        // Генерируем случайное время в пределах последних 60 минут (3600000 мс)
-        const randomMinutesAgo = Math.floor(Math.random() * 3600000); 
+        const randomMinutesAgo = Math.floor(Math.random() * 3600000);
         const pastTime = new Date(now.getTime() - randomMinutesAgo);
         
-        const data = generateReading(pastTime);
+        const data = generateReading();
+        data.timestamp = pastTime.getTime();
+        
         batchPromises.push(db.collection('water_readings').add(data));
       }
 
-      // Ждем сохранения всех 50 записей
       Promise.all(batchPromises).then(() => {
         console.log("Эмуляция 50 записей завершена");
-        // После заполнения истории запускаем реал-тайм обновление (каждые 5 сек)
         emulatorInterval = setInterval(async () => {
-          const data = generateReading(); // Текущее время
+          const data = generateReading();
           await db.collection('water_readings').add(data);
         }, 5000);
       });
@@ -279,17 +448,13 @@ const firebaseConfig = {
       document.getElementById('btn-stop').classList.add('hidden');
     }
 
+    // 📈 Графики
     const charts = {};
     function initCharts() {
       const config = (label, color) => ({
         type: 'line',
         data: { labels: [], datasets: [{ label, data: [], borderColor: color, tension: 0.3, fill: false }] },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false,
-          scales: { x: { ticks: { maxRotation: 45, minRotation: 45 } } },
-          animation: { duration: 0 }
-        }
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { maxRotation: 45, minRotation: 45 } } }, animation: { duration: 0 } }
       });
       charts.temp = new Chart(document.getElementById('chart-temp'), config('Температура (°C)', '#ef4444'));
       charts.ph = new Chart(document.getElementById('chart-ph'), config('pH', '#3b82f6'));
@@ -309,7 +474,6 @@ const firebaseConfig = {
             const timeStr = charts[key].data.labels[i];
             const timeParts = timeStr.split(':');
             const now = new Date();
-            // Пытаемся восстановить дату, если не получилось - берем текущую
             const time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 
                                   parseInt(timeParts[0]) || 0, parseInt(timeParts[1]) || 0, parseInt(timeParts[2]) || 0);
             allData.push({ timestamp: time.getTime(), [key]: charts[key].data.datasets[0].data[i] });
@@ -319,8 +483,6 @@ const firebaseConfig = {
       
       allData.push(newData);
       allData = sortByTimestamp(allData);
-      
-      // Ограничиваем график последними 50 точками
       if (allData.length > 50) allData = allData.slice(-50);
       
       ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
@@ -342,6 +504,7 @@ const firebaseConfig = {
       if(tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
     }
 
+    // ✅ Проверка статуса
     const thresholds = {
       ph: { min: 6.5, max: 8.5, norm: 'pH в норме', warn: 'Кислотность отклоняется', crit: 'Критическое значение pH' },
       nitrates: { min: 0, max: 45, norm: 'Нитраты в пределах ПДК', warn: 'Повышенное содержание', crit: 'Опасное превышение' },
@@ -396,10 +559,10 @@ const firebaseConfig = {
       document.getElementById('recommendations').innerHTML = recs.map(r => `<li>${r}</li>`).join('');
     }
 
-    // ФУНКЦИЯ СКАЧИВАНИЯ EXCEL
+    // 📥 Экспорт Excel
     async function downloadExcelData() {
       if (typeof XLSX === 'undefined') {
-        alert('Ошибка: Библиотека XLSX не загрузилась. Проверьте интернет.');
+        alert('Ошибка: Библиотека XLSX не загрузилась.');
         return;
       }
 
@@ -409,7 +572,12 @@ const firebaseConfig = {
       try {
         btns.forEach(b => { if(b) { b.textContent = '⏳ Подготовка...'; b.disabled = true; } });
         
-        const snapshot = await db.collection('water_readings').orderBy('timestamp', 'desc').limit(500).get();
+        let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(500);
+        if (selectedWaterbodyId) {
+          query = db.collection('water_readings').where('waterbodyId', '==', selectedWaterbodyId).orderBy('timestamp', 'desc').limit(500);
+        }
+        
+        const snapshot = await query.get();
         if (snapshot.empty) {
           alert('Нет данных для экспорта.');
           return;
@@ -420,60 +588,69 @@ const firebaseConfig = {
           const d = doc.data();
           const statusObj = checkStatus(d);
           data.push({
-            'Дата и время': (() => {
-  if (!d.timestamp) return 'Нет времени';
-  if (d.timestamp.toDate) return d.timestamp.toDate().toLocaleString('ru-RU'); // Для объектов Firebase
-  if (typeof d.timestamp === 'number') return new Date(d.timestamp).toLocaleString('ru-RU'); // Для чисел
-  const parsed = new Date(d.timestamp);
-  return isNaN(parsed.getTime()) ? 'Нет времени' : parsed.toLocaleString('ru-RU');
-})(),
-            'Водоём': d.waterbody || 'Не указан',
+            'Дата и время': d.timestamp ? new Date(d.timestamp).toLocaleString('ru-RU') : 'Нет времени',
+            'Водоём': d.waterbodyName || 'Не указан',
             'pH': d.ph?.toFixed(2) || '',
             'Температура (°C)': d.temp?.toFixed(1) || '',
             'Нитраты (мг/л)': d.nitrates?.toFixed(1) || '',
             'Фосфаты (мг/л)': d.phosphates?.toFixed(2) || '',
             'ХПК (мг O₂/л)': d.cod?.toFixed(1) || '',
-            'Прозрачность (см)': d.transparency?.toFixed(0) || '',
-            'Фитопланктон (мг/л)': d.phytoplankton?.toFixed(0) || '',
-            'Медь Cu (мкг/л)': d.heavy_metals?.Cu?.toFixed(2) || '',
-            'Никель Ni (мкг/л)': d.heavy_metals?.Ni?.toFixed(2) || '',
-            'Кобальт Co (мкг/л)': d.heavy_metals?.Co?.toFixed(2) || '',
-            'Статус': statusObj.overall === 'normal' ? 'Норма' : (statusObj.overall === 'warning' ? 'Отклонение' : 'Критично'),
-            'Рекомендация': statusObj.overall === 'normal' ? 'Продолжать мониторинг' : 'Требуется очистка/контроль'
+            'Статус': statusObj.overall === 'normal' ? 'Норма' : (statusObj.overall === 'warning' ? 'Отклонение' : 'Критично')
           });
         });
 
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Мониторинг воды");
-
-        const colWidths = Object.keys(data[0]).map(key => ({
-          wch: Math.max(key.length, ...data.map(row => String(row[key] || '').length)) + 2
-        }));
-        ws['!cols'] = colWidths;
-
-        const fileName = `AquaMonitor_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
+        const fileName = `AquaMonitor_${selectedWaterbodyId || 'all'}_${new Date().toISOString().slice(0,10)}.xlsx`;
         XLSX.writeFile(wb, fileName);
       } catch (e) {
         console.error(e);
         alert('Ошибка при скачивании: ' + e.message);
       } finally {
-        btns.forEach((b, i) => { 
-          if(b) { b.textContent = originalTexts[i]; b.disabled = false; } 
-        });
+        btns.forEach((b, i) => { if(b) { b.textContent = originalTexts[i]; b.disabled = false; } });
       }
     }
 
-    document.getElementById('btn-download-user').onclick = downloadExcelData;
-    document.getElementById('btn-download-admin').onclick = downloadExcelData;
+    // 🎛 Управление отображением
+    function showDashboard() {
+      if (!selectedWaterbodyId) return;
+      
+      const wb = waterbodies[selectedWaterbodyId];
+      document.getElementById('selected-waterbody-name').textContent = wb.name;
+      document.getElementById('selected-waterbody-desc').textContent = wb.description;
+      document.getElementById('admin-waterbody-name').textContent = wb.name;
+      document.getElementById('admin-waterbody-desc').textContent = wb.description;
+      
+      document.getElementById('landing-page').classList.add('hidden');
+      document.getElementById('waterbody-selection').classList.add('hidden');
+    }
 
+    function showWaterbodySelection() {
+      document.getElementById('landing-page').classList.add('hidden');
+      document.getElementById('user-view').classList.add('hidden');
+      document.getElementById('admin-view').classList.add('hidden');
+      document.getElementById('waterbody-selection').classList.remove('hidden');
+      
+      if (!map) initMap();
+      renderWaterbodyList();
+      
+      // Восстанавливаем предыдущий выбор
+      const saved = localStorage.getItem('selectedWaterbody');
+      if (saved && waterbodies[saved]) {
+        selectWaterbody(saved);
+      }
+    }
+
+    // 🔐 Авторизация
     let isLogin = true;
     const modal = document.getElementById('auth-modal');
-    const landingPage = document.getElementById('landing-page');
     
     document.getElementById('btn-login').onclick = () => modal.classList.remove('hidden');
     document.getElementById('hero-login').onclick = (e) => { e.preventDefault(); modal.classList.remove('hidden'); };
     document.getElementById('close-modal').onclick = () => modal.classList.add('hidden');
+    document.getElementById('btn-change-waterbody').onclick = showWaterbodySelection;
+    document.getElementById('admin-btn-change-waterbody').onclick = showWaterbodySelection;
     
     document.getElementById('auth-switch-link').onclick = (e) => {
       e.preventDefault();
@@ -486,27 +663,24 @@ const firebaseConfig = {
     };
 
     document.getElementById('auth-action').onclick = async () => {
-      const email = document.getElementById('email').value;
+      const email = document.getElementById('email').value.trim();
       const pass = document.getElementById('password').value;
       const role = document.getElementById('role-select').value;
+
+      if (!email || !pass) { alert('Заполните email и пароль'); return; }
+
       try {
         if(isLogin) {
           await auth.signInWithEmailAndPassword(email, pass);
         } else {
-          if(pass.length < 6) { alert('Пароль должен быть не менее 6 символов'); return; }
+          if (pass.length < 6) { alert('Пароль минимум 6 символов'); return; }
           const cred = await auth.createUserWithEmailAndPassword(email, pass);
-          await db.collection('users').doc(cred.user.uid).set({ 
-            email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() 
-          });
+          await db.collection('users').doc(cred.user.uid).set({ email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
         }
         modal.classList.add('hidden');
       } catch(e) {
-        console.error('Ошибка:', e);
-        if(e.code === 'auth/invalid-email') alert('Неверный формат email');
-        else if(e.code === 'auth/weak-password') alert('Пароль слишком слабый (минимум 6 символов)');
-        else if(e.code === 'auth/email-already-in-use') alert('Этот email уже зарегистрирован');
-        else if(e.code === 'auth/invalid-credential') alert('Неверный email или пароль');
-        else alert('Ошибка: ' + e.message);
+        console.error(e);
+        alert('Ошибка: ' + e.message);
       }
     };
 
@@ -516,27 +690,33 @@ const firebaseConfig = {
       if(!user) {
         document.getElementById('btn-login').classList.remove('hidden');
         document.getElementById('header-controls').classList.add('hidden');
-        landingPage.classList.remove('hidden');
         document.getElementById('user-view').classList.add('hidden');
         document.getElementById('admin-view').classList.add('hidden');
+        document.getElementById('waterbody-selection').classList.add('hidden');
+        document.getElementById('landing-page').classList.remove('hidden');
         stopEmulator();
         return;
       }
       
       document.getElementById('btn-login').classList.add('hidden');
       document.getElementById('header-controls').classList.remove('hidden');
-      landingPage.classList.add('hidden');
       
       const userDoc = await db.collection('users').doc(user.uid).get();
       const role = userDoc.exists ? userDoc.data().role : 'user';
       document.getElementById('user-role').textContent = role === 'admin' ? '👑 Администратор' : '👤 Пользователь';
+      
+      // Проверяем, выбран ли водоём
+      if (!selectedWaterbodyId) {
+        showWaterbodySelection();
+        return;
+      }
       
       document.getElementById('user-view').classList.toggle('hidden', role !== 'user');
       document.getElementById('admin-view').classList.toggle('hidden', role !== 'admin');
       
       if(role === 'admin') {
         initCharts();
-        startEmulator(); // Автоматический запуск при входе админа
+        startEmulator();
         loadAdminHistory();
       } else {
         loadUserLatest();
@@ -544,7 +724,12 @@ const firebaseConfig = {
     });
 
     function loadAdminHistory() {
-      db.collection('water_readings').orderBy('timestamp', 'desc').limit(50).onSnapshot(snap => {
+      let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(50);
+      if (selectedWaterbodyId) {
+        query = db.collection('water_readings').where('waterbodyId', '==', selectedWaterbodyId).orderBy('timestamp', 'desc').limit(50);
+      }
+      
+      query.onSnapshot(snap => {
         const allData = [];
         snap.forEach(doc => allData.push(doc.data()));
         const sortedData = sortByTimestamp([...allData]);
@@ -555,10 +740,19 @@ const firebaseConfig = {
     }
 
     function loadUserLatest() {
-      db.collection('water_readings').orderBy('timestamp', 'desc').limit(1).onSnapshot(snap => {
+      let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(1);
+      if (selectedWaterbodyId) {
+        query = db.collection('water_readings').where('waterbodyId', '==', selectedWaterbodyId).orderBy('timestamp', 'desc').limit(1);
+      }
+      
+      query.onSnapshot(snap => {
         if(!snap.empty) renderUserView(snap.docs[0].data());
       });
     }
+
+    // Кнопки скачивания
+    document.getElementById('btn-download-user').onclick = downloadExcelData;
+    document.getElementById('btn-download-admin').onclick = downloadExcelData;
   </script>
 </body>
 </html>
