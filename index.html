@@ -160,17 +160,17 @@
   </div>
 
   <script>
-    // 🔧 Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
-    // Ждем полной загрузки страницы
     document.addEventListener('DOMContentLoaded', function() {
+      // 🔧 Firebase Config
+      const firebaseConfig = {
+        apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+        authDomain: "site-voda-vkr.firebaseapp.com",
+        projectId: "site-voda-vkr",
+        storageBucket: "site-voda-vkr.firebasestorage.app",
+        messagingSenderId: "984009319014",
+        appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+      };
+      
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
       const db = firebase.firestore();
@@ -234,21 +234,35 @@ const firebaseConfig = {
         map.addControl(new maplibregl.NavigationControl(), 'top-right');
         map.on('error', (e) => console.warn('MapLibre error:', e.error));
 
-        Object.values(waterbodies).forEach(wb => {
-          // ✅ Исправленный HTML для попапа (без ошибок синтаксиса)
-          const popupHTML = `
-            <div style="padding: 8px; max-width: 220px; font-family: system-ui, sans-serif;">
-              <h3 style="margin: 0 0 6px 0; font-size: 1rem; color: #2563eb;">${wb.name}</h3>
-              <p style="margin: 4px 0; font-size: 0.85rem; color: #555; line-height: 1.4;">${wb.description}</p>
-              <button onclick="window.selectWaterbodyFromMap('${wb.id.replace(/'/g, "\\'")}')">
-                Выбрать водоём
-              </button>
-            </div>`;
+        // Очистка старых маркеров
+        markers.forEach(m => m.remove());
+        markers = [];
 
+        Object.values(waterbodies).forEach(wb => {
+          // Создаём попап без встроенного onclick, используя addEventListener
+          const popupContent = document.createElement('div');
+          popupContent.style.padding = '8px';
+          popupContent.style.maxWidth = '220px';
+          popupContent.style.fontFamily = 'system-ui, sans-serif';
+          popupContent.innerHTML = `
+            <h3 style="margin: 0 0 6px 0; font-size: 1rem; color: #2563eb;">${escapeHtml(wb.name)}</h3>
+            <p style="margin: 4px 0; font-size: 0.85rem; color: #555; line-height: 1.4;">${escapeHtml(wb.description)}</p>
+            <button class="select-wb-btn" data-id="${wb.id}">Выбрать водоём</button>
+          `;
+          const popup = new maplibregl.Popup({ offset: 25, closeButton: false }).setDOMContent(popupContent);
+          
           const marker = new maplibregl.Marker({ color: '#2563eb', scale: 0.8 })
             .setLngLat([wb.location.lng, wb.location.lat])
-            .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(popupHTML))
+            .setPopup(popup)
             .addTo(map);
+          
+          // Добавляем обработчик на кнопку после открытия попапа
+          marker.getElement().addEventListener('click', () => {
+            setTimeout(() => {
+              const btn = document.querySelector('.maplibregl-popup .select-wb-btn');
+              if (btn) btn.onclick = (e) => { selectWaterbody(btn.dataset.id); };
+            }, 50);
+          });
           
           markers.push(marker);
         });
@@ -256,20 +270,26 @@ const firebaseConfig = {
         isMapInitialized = true;
       }
 
-      // Глобальная функция для вызова из HTML
-      window.selectWaterbodyFromMap = function(id) {
-        console.log('Выбран водоём из карты:', id);
-        selectWaterbody(id);
-      };
+      function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+          if (m === '&') return '&amp;';
+          if (m === '<') return '&lt;';
+          if (m === '>') return '&gt;';
+          return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+          return c;
+        });
+      }
 
       function renderWaterbodyList() {
         const container = document.getElementById('waterbody-list');
+        if (!container) return;
         container.innerHTML = '';
         Object.values(waterbodies).forEach(wb => {
           const card = document.createElement('div');
           card.className = `waterbody-card ${selectedWaterbodyId === wb.id ? 'selected' : ''}`;
           card.onclick = () => selectWaterbody(wb.id);
-          card.innerHTML = `<h3>${wb.name}</h3><p><strong>Тип:</strong> ${wb.characteristics.type}</p><p><strong>Глубина:</strong> ${wb.characteristics.depth}</p><p><strong>Назначение:</strong> ${wb.characteristics.usage}</p>`;
+          card.innerHTML = `<h3>${escapeHtml(wb.name)}</h3><p><strong>Тип:</strong> ${escapeHtml(wb.characteristics.type)}</p><p><strong>Глубина:</strong> ${escapeHtml(wb.characteristics.depth)}</p><p><strong>Назначение:</strong> ${escapeHtml(wb.characteristics.usage)}</p>`;
           container.appendChild(card);
         });
       }
@@ -277,16 +297,20 @@ const firebaseConfig = {
       function selectWaterbody(id) {
         selectedWaterbodyId = id;
         const wb = waterbodies[id];
+        if (!wb) return;
         
         if (map) {
           map.flyTo({ center: [wb.location.lng, wb.location.lat], zoom: 10, duration: 1500 });
-          markers.forEach((m, idx) => {
-            const wbId = Object.keys(waterbodies)[idx];
-            if (wbId === id) m.togglePopup(); else m.togglePopup();
-          });
         }
         renderWaterbodyList();
         localStorage.setItem('selectedWaterbody', id);
+        
+        // Перезапускаем эмулятор, если он был запущен
+        if (emulatorInterval) {
+          stopEmulator();
+          startEmulator();
+        }
+        
         showDashboard();
       }
 
@@ -308,24 +332,36 @@ const firebaseConfig = {
       }
 
       function startEmulator() {
-        document.getElementById('btn-emulator').classList.add('hidden');
-        document.getElementById('btn-stop').classList.remove('hidden');
+        if (!selectedWaterbodyId) {
+          console.warn('Не выбран водоём, эмулятор не запущен');
+          return;
+        }
+        if (emulatorInterval) stopEmulator();
         
+        const btnEmulator = document.getElementById('btn-emulator');
+        const btnStop = document.getElementById('btn-stop');
+        if (btnEmulator) btnEmulator.classList.add('hidden');
+        if (btnStop) btnStop.classList.remove('hidden');
+        
+        // Генерируем 50 исторических записей
         const now = new Date();
         const batchPromises = [];
-        
         for (let i = 0; i < 50; i++) {
           const randomMinutesAgo = Math.floor(Math.random() * 3600000);
           const pastTime = new Date(now.getTime() - randomMinutesAgo);
           const data = generateReading();
-          data.timestamp = pastTime.getTime();
-          batchPromises.push(db.collection('water_readings').add(data));
+          if (data) {
+            data.timestamp = pastTime.getTime();
+            batchPromises.push(db.collection('water_readings').add(data));
+          }
         }
 
-        Promise.all(batchPromises).then(() => {
+        Promise.all(batchPromises).catch(e => console.warn('Ошибка добавления истории:', e)).finally(() => {
           emulatorInterval = setInterval(async () => {
             const data = generateReading();
-            await db.collection('water_readings').add(data);
+            if (data) {
+              await db.collection('water_readings').add(data).catch(e => console.warn('Ошибка добавления:', e));
+            }
           }, 5000);
         });
       }
@@ -334,8 +370,10 @@ const firebaseConfig = {
         console.log("Эмулятор остановлен");
         clearInterval(emulatorInterval);
         emulatorInterval = null;
-        document.getElementById('btn-emulator').classList.remove('hidden');
-        document.getElementById('btn-stop').classList.add('hidden');
+        const btnEmulator = document.getElementById('btn-emulator');
+        const btnStop = document.getElementById('btn-stop');
+        if (btnEmulator) btnEmulator.classList.remove('hidden');
+        if (btnStop) btnStop.classList.add('hidden');
       }
 
       const charts = {};
@@ -352,7 +390,7 @@ const firebaseConfig = {
       function updateAdminCharts(newData) {
         let allData = [];
         ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
-          if (charts[key].data.labels.length > 0) {
+          if (charts[key] && charts[key].data.labels.length > 0) {
             for (let i = 0; i < charts[key].data.labels.length; i++) {
               const timeParts = charts[key].data.labels[i].split(':');
               const now = new Date();
@@ -361,11 +399,12 @@ const firebaseConfig = {
             }
           }
         });
-        allData.push(newData);
+        allData.push({ timestamp: newData.timestamp, temp: newData.temp, ph: newData.ph, nitrates: newData.nitrates, cod: newData.cod });
         allData = sortByTimestamp(allData);
         if (allData.length > 50) allData = allData.slice(-50);
         ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
           const chart = charts[key];
+          if (!chart) return;
           chart.data.labels = allData.map(item => new Date(item.timestamp).toLocaleTimeString('ru-RU'));
           chart.data.datasets[0].data = allData.map(item => item[key]);
           chart.update();
@@ -374,10 +413,12 @@ const firebaseConfig = {
 
       function addUserTableRow(data) {
         const tbody = document.querySelector('#data-table tbody');
+        if (!tbody) return;
         const row = document.createElement('tr');
         const status = checkStatus(data).overall;
         row.innerHTML = `<td>${new Date(data.timestamp).toLocaleTimeString('ru-RU')}</td><td>${data.ph.toFixed(2)}</td><td>${data.temp.toFixed(1)}</td><td>${data.nitrates.toFixed(1)}</td><td>${data.cod.toFixed(1)}</td><td><span class="status ${status}">${status}</span></td>`;
-        if (tbody.firstChild) tbody.insertBefore(row, tbody.firstChild); else tbody.appendChild(row);
+        if (tbody.firstChild) tbody.insertBefore(row, tbody.firstChild);
+        else tbody.appendChild(row);
         if(tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
       }
 
@@ -397,16 +438,23 @@ const firebaseConfig = {
 
       function renderUserView(data) {
         const { overall, params } = checkStatus(data);
-        document.getElementById('user-status').className = `status ${overall}`;
-        document.getElementById('user-status').textContent = overall === 'normal' ? '✅ Норма' : (overall === 'warning' ? '⚠️ Отклонения' : '❌ Критично');
-        document.getElementById('user-params').innerHTML = params.map(p => `<div class="param-card ${p.status}"><strong>${p.key.toUpperCase()}</strong><br>${p.msg}</div>`).join('');
+        const userStatusDiv = document.getElementById('user-status');
+        if (userStatusDiv) {
+          userStatusDiv.className = `status ${overall}`;
+          userStatusDiv.textContent = overall === 'normal' ? '✅ Норма' : (overall === 'warning' ? '⚠️ Отклонения' : '❌ Критично');
+        }
+        const userParamsDiv = document.getElementById('user-params');
+        if (userParamsDiv) {
+          userParamsDiv.innerHTML = params.map(p => `<div class="param-card ${p.status}"><strong>${p.key.toUpperCase()}</strong><br>${p.msg}</div>`).join('');
+        }
         const recs = [];
         if(overall !== 'normal') {
           if(params.some(p => p.key === 'nitrates' && p.status !== 'normal')) recs.push('Установить фильтр.');
           if(params.some(p => p.key === 'cod' && p.status !== 'normal')) recs.push('Аэрация воды.');
           if(overall === 'critical') recs.unshift('❗ Прекратить использование!');
         } else { recs.push('Мониторинг.'); }
-        document.getElementById('recommendations').innerHTML = recs.map(r => `<li>${r}</li>`).join('');
+        const recList = document.getElementById('recommendations');
+        if (recList) recList.innerHTML = recs.map(r => `<li>${r}</li>`).join('');
       }
 
       async function downloadExcelData() {
@@ -436,10 +484,16 @@ const firebaseConfig = {
       function showDashboard() {
         if (!selectedWaterbodyId) return;
         const wb = waterbodies[selectedWaterbodyId];
-        document.getElementById('selected-waterbody-name').textContent = wb.name;
-        document.getElementById('selected-waterbody-desc').textContent = wb.description;
-        document.getElementById('admin-waterbody-name').textContent = wb.name;
-        document.getElementById('admin-waterbody-desc').textContent = wb.description;
+        if (!wb) return;
+        const selectedNameSpan = document.getElementById('selected-waterbody-name');
+        const selectedDescSpan = document.getElementById('selected-waterbody-desc');
+        const adminNameSpan = document.getElementById('admin-waterbody-name');
+        const adminDescSpan = document.getElementById('admin-waterbody-desc');
+        if (selectedNameSpan) selectedNameSpan.textContent = wb.name;
+        if (selectedDescSpan) selectedDescSpan.textContent = wb.description;
+        if (adminNameSpan) adminNameSpan.textContent = wb.name;
+        if (adminDescSpan) adminDescSpan.textContent = wb.description;
+        
         document.getElementById('landing-page').classList.add('hidden');
         document.getElementById('waterbody-selection').classList.add('hidden');
         const user = auth.currentUser;
@@ -467,18 +521,23 @@ const firebaseConfig = {
         document.getElementById('admin-view').classList.add('hidden');
         document.getElementById('waterbody-selection').classList.remove('hidden');
         
-        // Важно: даем время на отрисовку блока перед обновлением карты
         setTimeout(() => {
           if (!isMapInitialized) initMap(); 
           else if (map) {
             map.resize();
-            map.invalidateSize();
           }
         }, 100);
         
         renderWaterbodyList();
         const saved = localStorage.getItem('selectedWaterbody');
-        if (saved && waterbodies[saved]) selectWaterbody(saved);
+        if (saved && waterbodies[saved]) {
+          selectedWaterbodyId = saved;
+          renderWaterbodyList();
+          if (map) {
+            const wb = waterbodies[saved];
+            map.flyTo({ center: [wb.location.lng, wb.location.lat], zoom: 10, duration: 1000 });
+          }
+        }
       }
 
       // 🔘 ПРИВЯЗКА КНОПОК
@@ -493,6 +552,7 @@ const firebaseConfig = {
       const btnChangeWaterbody = document.getElementById('btn-change-waterbody');
       const adminBtnChangeWaterbody = document.getElementById('admin-btn-change-waterbody');
       const btnStop = document.getElementById('btn-stop');
+      const btnEmulator = document.getElementById('btn-emulator');
 
       if (btnLogin) btnLogin.onclick = () => document.getElementById('auth-modal').classList.remove('hidden');
       if (heroLogin) heroLogin.onclick = (e) => { e.preventDefault(); document.getElementById('auth-modal').classList.remove('hidden'); };
@@ -500,38 +560,28 @@ const firebaseConfig = {
       if (btnLogout) btnLogout.onclick = () => auth.signOut();
       if (btnDownloadUser) btnDownloadUser.onclick = downloadExcelData;
       if (btnDownloadAdmin) btnDownloadAdmin.onclick = downloadExcelData;
+      if (btnChangeWaterbody) btnChangeWaterbody.onclick = showWaterbodySelection;
+      if (adminBtnChangeWaterbody) adminBtnChangeWaterbody.onclick = showWaterbodySelection;
+      if (btnStop) btnStop.onclick = stopEmulator;
+      if (btnEmulator) btnEmulator.onclick = startEmulator;
 
-      // ✅ Исправлено: Кнопки смены водоема
-      if (btnChangeWaterbody) {
-        btnChangeWaterbody.onclick = function() {
-          console.log('Сменить водоем (Пользователь)');
-          showWaterbodySelection();
-        };
-      }
-      if (adminBtnChangeWaterbody) {
-        adminBtnChangeWaterbody.onclick = function() {
-          console.log('Сменить водоем (Админ)');
-          showWaterbodySelection();
-        };
-      }
-      // ✅ Исправлено: Кнопка Стоп
-      if (btnStop) {
-        btnStop.onclick = function() {
-          console.log('Стоп эмулятор');
-          stopEmulator();
-        };
-      }
+      // Логика авторизации - ИСПРАВЛЕНА ОШИБКА isLogin
+      let isLogin = true; // ✅ Объявляем здесь
 
-      // Логика авторизации
       if (authSwitchLink) {
-        let isLogin = true;
         authSwitchLink.onclick = (e) => {
-          e.preventDefault(); isLogin = !isLogin;
-          document.getElementById('auth-title').textContent = isLogin ? 'Вход' : 'Регистрация';
-          document.getElementById('auth-action').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
-          document.getElementById('auth-switch-text').textContent = isLogin ? 'Нет аккаунта?' : 'Есть аккаунт?';
-          document.getElementById('auth-switch-link').textContent = isLogin ? 'Регистрация' : 'Вход';
-          document.getElementById('role-select').classList.toggle('hidden', isLogin);
+          e.preventDefault();
+          isLogin = !isLogin;
+          const authTitle = document.getElementById('auth-title');
+          const authActionBtn = document.getElementById('auth-action');
+          const authSwitchText = document.getElementById('auth-switch-text');
+          const authSwitchLinkEl = document.getElementById('auth-switch-link');
+          const roleSelect = document.getElementById('role-select');
+          if (authTitle) authTitle.textContent = isLogin ? 'Вход' : 'Регистрация';
+          if (authActionBtn) authActionBtn.textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
+          if (authSwitchText) authSwitchText.textContent = isLogin ? 'Нет аккаунта?' : 'Есть аккаунт?';
+          if (authSwitchLinkEl) authSwitchLinkEl.textContent = isLogin ? 'Регистрация' : 'Вход';
+          if (roleSelect) roleSelect.classList.toggle('hidden', isLogin);
         };
       }
       if (authAction) {
@@ -541,14 +591,21 @@ const firebaseConfig = {
           const role = document.getElementById('role-select').value;
           if (!email || !pass) { alert('Заполните поля'); return; }
           try {
-            if(isLogin) await auth.signInWithEmailAndPassword(email, pass);
-            else {
-              if (pass.length < 6) { alert('Пароль > 6 символов'); return; }
+            if (isLogin) {
+              await auth.signInWithEmailAndPassword(email, pass);
+            } else {
+              if (pass.length < 6) { alert('Пароль должен быть не менее 6 символов'); return; }
               const cred = await auth.createUserWithEmailAndPassword(email, pass);
-              await db.collection('users').doc(cred.user.uid).set({ email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+              await db.collection('users').doc(cred.user.uid).set({
+                email,
+                role: role || 'user',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              });
             }
             document.getElementById('auth-modal').classList.add('hidden');
-          } catch(e) { alert('Ошибка: ' + e.message); }
+          } catch(e) {
+            alert('Ошибка: ' + e.message);
+          }
         };
       }
 
@@ -567,11 +624,19 @@ const firebaseConfig = {
         document.getElementById('header-controls').classList.remove('hidden');
         const userDoc = await db.collection('users').doc(user.uid).get();
         const role = userDoc.exists ? userDoc.data().role : 'user';
-        document.getElementById('user-role').textContent = role === 'admin' ? '👑 Админ' : '👤 Пользователь';
-        if (!selectedWaterbodyId) { showWaterbodySelection(); return; }
-        document.getElementById('user-view').classList.toggle('hidden', role !== 'user');
-        document.getElementById('admin-view').classList.toggle('hidden', role !== 'admin');
-        if(role === 'admin') { initCharts(); startEmulator(); loadAdminHistory(); } else { loadUserLatest(); }
+        const userRoleSpan = document.getElementById('user-role');
+        if (userRoleSpan) userRoleSpan.textContent = role === 'admin' ? '👑 Админ' : '👤 Пользователь';
+        if (!selectedWaterbodyId) { 
+          // Восстанавливаем выбранный водоём из localStorage, если есть
+          const saved = localStorage.getItem('selectedWaterbody');
+          if (saved && waterbodies[saved]) {
+            selectedWaterbodyId = saved;
+          } else {
+            showWaterbodySelection();
+            return;
+          }
+        }
+        showDashboard();
       });
 
       function loadAdminHistory() {
@@ -581,7 +646,8 @@ const firebaseConfig = {
           const allData = [];
           snap.forEach(doc => allData.push(doc.data()));
           const sortedData = sortByTimestamp([...allData]);
-          document.querySelector('#data-table tbody').innerHTML = '';
+          const tbody = document.querySelector('#data-table tbody');
+          if (tbody) tbody.innerHTML = '';
           sortedData.forEach(data => updateAdminCharts(data));
           [...allData].reverse().forEach(data => addUserTableRow(data));
         });
