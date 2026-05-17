@@ -8,7 +8,7 @@
   <!-- Chart.js для графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <!-- MapLibre GL JS -->
+  <!-- MapLibre GL JS (Карта) -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   
@@ -46,6 +46,7 @@
     #auth-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; }
     
+    /* Стили для карты */
     .waterbody-selector { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
     .waterbody-card { flex: 1; min-width: 250px; max-width: 350px; padding: 1.5rem; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; background: white; }
     .waterbody-card:hover { transform: translateY(-2px); box-shadow: 0 8px 12px rgba(0,0,0,0.1); }
@@ -74,6 +75,7 @@
   </header>
 
   <div class="container">
+    <!-- Главная страница -->
     <div id="landing-page">
       <div class="hero">
         <div class="water-drop">💧</div>
@@ -83,6 +85,7 @@
       </div>
     </div>
 
+    <!-- Модальное окно авторизации -->
     <div id="auth-modal" class="hidden">
       <div class="modal-content">
         <h3 id="auth-title">Вход в систему</h3>
@@ -101,17 +104,19 @@
       </div>
     </div>
 
+    <!-- Выбор водоема -->
     <div id="waterbody-selection" class="hidden">
       <h2 style="margin-bottom: 1rem;">🗺️ Выберите водоём</h2>
       <div id="map"></div>
       <div class="waterbody-selector" id="waterbody-list"></div>
     </div>
 
+    <!-- Панель пользователя -->
     <div id="user-view" class="hidden">
       <div class="waterbody-info">
         <h3 id="selected-waterbody-name">Водоём</h3>
         <p id="selected-waterbody-desc">Описание</p>
-        <button id="btn-change-waterbody" class="btn btn-primary" style="margin-top: 0.5rem;">🔄 Сменить</button>
+        <button id="btn-change-waterbody" class="btn btn-primary" style="margin-top: 0.5rem;">🔄 Сменить водоём</button>
       </div>
       <div class="card">
         <h3>📊 Сводка</h3>
@@ -123,11 +128,12 @@
       </div>
     </div>
 
+    <!-- Панель администратора -->
     <div id="admin-view" class="hidden">
       <div class="waterbody-info">
         <h3 id="admin-waterbody-name">Водоём</h3>
         <p id="admin-waterbody-desc">Описание</p>
-        <button id="admin-btn-change-waterbody" class="btn btn-primary" style="margin-top: 0.5rem;">🔄 Сменить</button>
+        <button id="admin-btn-change-waterbody" class="btn btn-primary" style="margin-top: 0.5rem;">🔄 Сменить водоём</button>
       </div>
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
@@ -154,26 +160,56 @@
   </div>
 
   <script>
+    // 🔧 Firebase Config
     const firebaseConfig = {
-const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+      apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+      authDomain: "site-voda-vkr.firebaseapp.com",
+      projectId: "site-voda-vkr",
+      storageBucket: "site-voda-vkr.firebasestorage.app",
+      messagingSenderId: "984009319014",
+      appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+    };
 
+    // Ждем полной загрузки страницы
     document.addEventListener('DOMContentLoaded', function() {
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
       const db = firebase.firestore();
 
+      // 🗺️ БАЗА ДАННЫХ ВОДОЁМОВ
       const waterbodies = {
-        'lower-farm-pond': { id: 'lower-farm-pond', name: 'Нижний фермский пруд', description: 'Тимирязевский район, Москва.', location: { lat: 55.8273, lng: 37.5456 }, characteristics: { type: 'прудовое', depth: '2-4 м', area: '3.5 га', usage: 'рекреационное' }, baseline: { ph: { min: 6.5, max: 8.0, avg: 7.2 }, temp: { winter: 2, summer: 22 }, nitrates: { min: 4, max: 25, avg: 12 }, phosphates: { min: 0.1, max: 1.6, avg: 0.6 }, cod: { min: 10, max: 36, avg: 20 } } },
-        'oka-river-ryazan': { id: 'oka-river-ryazan', name: 'Река Ока (г. Рязань)', description: 'Река Ока, г. Рязань.', location: { lat: 54.6292, lng: 39.7352 }, characteristics: { type: 'речное', depth: '3-8 м', area: '1500 км', usage: 'хозяйственное' }, baseline: { ph: { min: 6.8, max: 8.2, avg: 7.4 }, temp: { winter: 1, summer: 21 }, nitrates: { min: 5, max: 28, avg: 14 }, phosphates: { min: 0.1, max: 1.8, avg: 0.7 }, cod: { min: 12, max: 40, avg: 24 } } },
-        'seliger-lake': { id: 'seliger-lake', name: 'Озеро Селигер', description: 'Озеро в Тверской обл.', location: { lat: 57.2, lng: 33.5 }, characteristics: { type: 'озёрное', depth: '5-15 м', area: '260 км²', usage: 'рекреационное' }, baseline: { ph: { min: 7.0, max: 8.5, avg: 7.6 }, temp: { winter: 1, summer: 20 }, nitrates: { min: 3, max: 18, avg: 8 }, phosphates: { min: 0.05, max: 1.2, avg: 0.4 }, cod: { min: 8, max: 28, avg: 16 } } },
-        'moscow-river': { id: 'moscow-river', name: 'Река Москва (центр)', description: 'Река в центре Москвы.', location: { lat: 55.7558, lng: 37.6173 }, characteristics: { type: 'речное', depth: '2-6 м', area: '502 км', usage: 'техническое' }, baseline: { ph: { min: 6.5, max: 8.0, avg: 7.1 }, temp: { winter: 2, summer: 23 }, nitrates: { min: 8, max: 35, avg: 18 }, phosphates: { min: 0.2, max: 2.5, avg: 1.0 }, cod: { min: 15, max: 45, avg: 28 } } }
+        'lower-farm-pond': {
+          id: 'lower-farm-pond',
+          name: 'Нижний фермский пруд',
+          description: 'Водоём в Тимирязевском районе г. Москвы. Характеризуется сезонным цветением в летний период.',
+          location: { lat: 55.8273, lng: 37.5456 },
+          characteristics: { type: 'прудовое', depth: '2-4 м', area: '3.5 га', usage: 'рекреационное' },
+          baseline: { ph: { min: 6.5, max: 8.0, avg: 7.2 }, temp: { winter: 2, summer: 22 }, nitrates: { min: 4, max: 25, avg: 12 }, phosphates: { min: 0.1, max: 1.6, avg: 0.6 }, cod: { min: 10, max: 36, avg: 20 } }
+        },
+        'oka-river-ryazan': {
+          id: 'oka-river-ryazan',
+          name: 'Река Ока (г. Рязань)',
+          description: 'Крупная река, протекающая через г. Рязань. Подвержена антропогенному воздействию.',
+          location: { lat: 54.6292, lng: 39.7352 },
+          characteristics: { type: 'речное', depth: '3-8 м', area: 'протяжённость 1500 км', usage: 'хозяйственно-питьевое' },
+          baseline: { ph: { min: 6.8, max: 8.2, avg: 7.4 }, temp: { winter: 1, summer: 21 }, nitrates: { min: 5, max: 28, avg: 14 }, phosphates: { min: 0.1, max: 1.8, avg: 0.7 }, cod: { min: 12, max: 40, avg: 24 } }
+        },
+        'seliger-lake': {
+          id: 'seliger-lake',
+          name: 'Озеро Селигер',
+          description: 'Крупное озеро в Тверской области. Популярный объект рекреации и туризма.',
+          location: { lat: 57.2, lng: 33.5 },
+          characteristics: { type: 'озёрное', depth: '5-15 м', area: '260 км²', usage: 'рекреационное' },
+          baseline: { ph: { min: 7.0, max: 8.5, avg: 7.6 }, temp: { winter: 1, summer: 20 }, nitrates: { min: 3, max: 18, avg: 8 }, phosphates: { min: 0.05, max: 1.2, avg: 0.4 }, cod: { min: 8, max: 28, avg: 16 } }
+        },
+        'moscow-river': {
+          id: 'moscow-river',
+          name: 'Река Москва (центр)',
+          description: 'Река в черте г. Москвы. Высокая антропогенная нагрузка.',
+          location: { lat: 55.7558, lng: 37.6173 },
+          characteristics: { type: 'речное', depth: '2-6 м', area: 'протяжённость 502 км', usage: 'техническое' },
+          baseline: { ph: { min: 6.5, max: 8.0, avg: 7.1 }, temp: { winter: 2, summer: 23 }, nitrates: { min: 8, max: 35, avg: 18 }, phosphates: { min: 0.2, max: 2.5, avg: 1.0 }, cod: { min: 15, max: 45, avg: 28 } }
+        }
       };
 
       let selectedWaterbodyId = null;
@@ -182,27 +218,50 @@ const firebaseConfig = {
       let emulatorInterval = null;
       let isMapInitialized = false;
 
+      // 🗺️ ИНИЦИАЛИЗАЦИЯ КАРТЫ (MAPLIBRE GL JS)
       function initMap() {
-        if (isMapInitialized && map) { map.resize(); return; }
-        map = new maplibregl.Map({ container: 'map', style: 'https://tiles.openfreemap.org/styles/liberty', center: [37.6173, 55.7558], zoom: 6 });
+        if (isMapInitialized && map) {
+          map.resize();
+          return;
+        }
+
+        map = new maplibregl.Map({
+          container: 'map',
+          style: 'https://tiles.openfreemap.org/styles/liberty', 
+          center: [37.6173, 55.7558], 
+          zoom: 6
+        });
+
         map.addControl(new maplibregl.NavigationControl(), 'top-right');
-        map.on('error', (e) => console.warn('Map error', e.error));
+        map.on('error', (e) => console.warn('MapLibre error:', e.error));
+
         Object.values(waterbodies).forEach(wb => {
+          // ✅ Исправленный HTML для попапа (без ошибок синтаксиса)
+          const popupHTML = `
+            <div style="padding: 8px; max-width: 220px; font-family: system-ui, sans-serif;">
+              <h3 style="margin: 0 0 6px 0; font-size: 1rem; color: #2563eb;">${wb.name}</h3>
+              <p style="margin: 4px 0; font-size: 0.85rem; color: #555; line-height: 1.4;">${wb.description}</p>
+              <button onclick="window.selectWaterbodyFromMap('${wb.id.replace(/'/g, "\\'")}')">
+                Выбрать водоём
+              </button>
+            </div>`;
+
           const marker = new maplibregl.Marker({ color: '#2563eb', scale: 0.8 })
             .setLngLat([wb.location.lng, wb.location.lat])
-            .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(`
-              <div style="padding: 8px; font-family: system-ui, sans-serif;">
-                <h3 style="margin:0 0 6px; color:#2563eb;">${wb.name}</h3>
-                <p style="margin:0 0 8px; font-size:0.85rem;">${wb.description}</p>
-                <button onclick="window.selectWaterbodyFromMap('${wb.id}')" style="padding:4px 10px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">Выбрать</button>
-              </div>`))
+            .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(popupHTML))
             .addTo(map);
+          
           markers.push(marker);
         });
+
         isMapInitialized = true;
       }
 
-      window.selectWaterbodyFromMap = function(id) { selectWaterbody(id); };
+      // Глобальная функция для вызова из HTML
+      window.selectWaterbodyFromMap = function(id) {
+        console.log('Выбран водоём из карты:', id);
+        selectWaterbody(id);
+      };
 
       function renderWaterbodyList() {
         const container = document.getElementById('waterbody-list');
@@ -219,6 +278,7 @@ const firebaseConfig = {
       function selectWaterbody(id) {
         selectedWaterbodyId = id;
         const wb = waterbodies[id];
+        
         if (map) {
           map.flyTo({ center: [wb.location.lng, wb.location.lat], zoom: 10, duration: 1500 });
           markers.forEach((m, idx) => {
@@ -251,8 +311,10 @@ const firebaseConfig = {
       function startEmulator() {
         document.getElementById('btn-emulator').classList.add('hidden');
         document.getElementById('btn-stop').classList.remove('hidden');
+        
         const now = new Date();
         const batchPromises = [];
+        
         for (let i = 0; i < 50; i++) {
           const randomMinutesAgo = Math.floor(Math.random() * 3600000);
           const pastTime = new Date(now.getTime() - randomMinutesAgo);
@@ -260,6 +322,7 @@ const firebaseConfig = {
           data.timestamp = pastTime.getTime();
           batchPromises.push(db.collection('water_readings').add(data));
         }
+
         Promise.all(batchPromises).then(() => {
           emulatorInterval = setInterval(async () => {
             const data = generateReading();
@@ -269,7 +332,9 @@ const firebaseConfig = {
       }
 
       function stopEmulator() {
+        console.log("Эмулятор остановлен");
         clearInterval(emulatorInterval);
+        emulatorInterval = null;
         document.getElementById('btn-emulator').classList.remove('hidden');
         document.getElementById('btn-stop').classList.add('hidden');
       }
@@ -402,33 +467,65 @@ const firebaseConfig = {
         document.getElementById('user-view').classList.add('hidden');
         document.getElementById('admin-view').classList.add('hidden');
         document.getElementById('waterbody-selection').classList.remove('hidden');
+        
+        // Важно: даем время на отрисовку блока перед обновлением карты
         setTimeout(() => {
-          if (!isMapInitialized) initMap(); else if (map) map.resize();
+          if (!isMapInitialized) initMap(); 
+          else if (map) {
+            map.resize();
+            map.invalidateSize();
+          }
         }, 100);
+        
         renderWaterbodyList();
         const saved = localStorage.getItem('selectedWaterbody');
         if (saved && waterbodies[saved]) selectWaterbody(saved);
       }
 
-      let isLogin = true;
-      const modal = document.getElementById('auth-modal');
+      // 🔘 ПРИВЯЗКА КНОПОК
       const btnLogin = document.getElementById('btn-login');
       const heroLogin = document.getElementById('hero-login');
       const closeModal = document.getElementById('close-modal');
-      const btnChangeWaterbody = document.getElementById('btn-change-waterbody');
-      const adminBtnChangeWaterbody = document.getElementById('admin-btn-change-waterbody');
-      const authSwitchLink = document.getElementById('auth-switch-link');
-      const authAction = document.getElementById('auth-action');
       const btnLogout = document.getElementById('btn-logout');
       const btnDownloadUser = document.getElementById('btn-download-user');
       const btnDownloadAdmin = document.getElementById('btn-download-admin');
+      const authSwitchLink = document.getElementById('auth-switch-link');
+      const authAction = document.getElementById('auth-action');
+      const btnChangeWaterbody = document.getElementById('btn-change-waterbody');
+      const adminBtnChangeWaterbody = document.getElementById('admin-btn-change-waterbody');
+      const btnStop = document.getElementById('btn-stop');
 
-      if (btnLogin) btnLogin.onclick = () => modal.classList.remove('hidden');
-      if (heroLogin) heroLogin.onclick = (e) => { e.preventDefault(); modal.classList.remove('hidden'); };
-      if (closeModal) closeModal.onclick = () => modal.classList.add('hidden');
-      if (btnChangeWaterbody) btnChangeWaterbody.onclick = showWaterbodySelection;
-      if (adminBtnChangeWaterbody) adminBtnChangeWaterbody.onclick = showWaterbodySelection;
+      if (btnLogin) btnLogin.onclick = () => document.getElementById('auth-modal').classList.remove('hidden');
+      if (heroLogin) heroLogin.onclick = (e) => { e.preventDefault(); document.getElementById('auth-modal').classList.remove('hidden'); };
+      if (closeModal) closeModal.onclick = () => document.getElementById('auth-modal').classList.add('hidden');
+      if (btnLogout) btnLogout.onclick = () => auth.signOut();
+      if (btnDownloadUser) btnDownloadUser.onclick = downloadExcelData;
+      if (btnDownloadAdmin) btnDownloadAdmin.onclick = downloadExcelData;
+
+      // ✅ Исправлено: Кнопки смены водоема
+      if (btnChangeWaterbody) {
+        btnChangeWaterbody.onclick = function() {
+          console.log('Сменить водоем (Пользователь)');
+          showWaterbodySelection();
+        };
+      }
+      if (adminBtnChangeWaterbody) {
+        adminBtnChangeWaterbody.onclick = function() {
+          console.log('Сменить водоем (Админ)');
+          showWaterbodySelection();
+        };
+      }
+      // ✅ Исправлено: Кнопка Стоп
+      if (btnStop) {
+        btnStop.onclick = function() {
+          console.log('Стоп эмулятор');
+          stopEmulator();
+        };
+      }
+
+      // Логика авторизации
       if (authSwitchLink) {
+        let isLogin = true;
         authSwitchLink.onclick = (e) => {
           e.preventDefault(); isLogin = !isLogin;
           document.getElementById('auth-title').textContent = isLogin ? 'Вход' : 'Регистрация';
@@ -451,13 +548,10 @@ const firebaseConfig = {
               const cred = await auth.createUserWithEmailAndPassword(email, pass);
               await db.collection('users').doc(cred.user.uid).set({ email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             }
-            modal.classList.add('hidden');
+            document.getElementById('auth-modal').classList.add('hidden');
           } catch(e) { alert('Ошибка: ' + e.message); }
         };
       }
-      if (btnLogout) btnLogout.onclick = () => auth.signOut();
-      if (btnDownloadUser) btnDownloadUser.onclick = downloadExcelData;
-      if (btnDownloadAdmin) btnDownloadAdmin.onclick = downloadExcelData;
 
       auth.onAuthStateChanged(async user => {
         if(!user) {
