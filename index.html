@@ -160,14 +160,14 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // 🔧 Firebase Config
-     const firebaseConfig = {
-  apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
-  authDomain: "site-voda-vkr.firebaseapp.com",
-  projectId: "site-voda-vkr",
-  storageBucket: "site-voda-vkr.firebasestorage.app",
-  messagingSenderId: "984009319014",
-  appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
-};
+      const firebaseConfig = {
+        apiKey: "AIzaSyAca9gvSFLaOSldjLrlqVoez3PjilUN9S8",
+        authDomain: "site-voda-vkr.firebaseapp.com",
+        projectId: "site-voda-vkr",
+        storageBucket: "site-voda-vkr.firebasestorage.app",
+        messagingSenderId: "984009319014",
+        appId: "1:984009319014:web:81f840ce8f2c5a37ef03a7"
+      };
       
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
@@ -214,6 +214,7 @@
       let markers = [];
       let emulatorInterval = null;
       let isMapInitialized = false;
+      let unsubscribeReadings = null; // ✅ Отписка от real-time слушателя
 
       // 🗺️ ИНИЦИАЛИЗАЦИЯ КАРТЫ
       function initMap() {
@@ -296,6 +297,12 @@
         renderWaterbodyList();
         localStorage.setItem('selectedWaterbody', id);
         
+        // ✅ Отписываемся от старого слушателя перед сменой водоёма
+        if (unsubscribeReadings) {
+          unsubscribeReadings();
+          unsubscribeReadings = null;
+        }
+        
         if (emulatorInterval) {
           stopEmulator();
           startEmulator();
@@ -364,7 +371,7 @@
         if (btnStop) btnStop.classList.add('hidden');
       }
 
-      // 📊 ИНИЦИАЛИЗАЦИЯ ГРАФИКОВ (линии с заливкой, без точек)
+      // 📊 ИНИЦИАЛИЗАЦИЯ ГРАФИКОВ
       const charts = {};
       function initCharts() {
         const options = {
@@ -408,28 +415,35 @@
 
       function sortByTimestamp(arr) { return arr.sort((a, b) => a.timestamp - b.timestamp); }
 
-      function updateAdminCharts(newData) {
-        let allData = [];
-        ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
-          if (charts[key] && charts[key].data.labels.length > 0) {
-            for (let i = 0; i < charts[key].data.labels.length; i++) {
-              const timeParts = charts[key].data.labels[i].split(':');
-              const now = new Date();
-              const time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(timeParts[0]) || 0, parseInt(timeParts[1]) || 0, parseInt(timeParts[2]) || 0);
-              allData.push({ timestamp: time.getTime(), [key]: charts[key].data.datasets[0].data[i] });
-            }
-          }
-        });
-        allData.push({ timestamp: newData.timestamp, temp: newData.temp, ph: newData.ph, nitrates: newData.nitrates, cod: newData.cod });
-        allData.sort((a,b) => a.timestamp - b.timestamp);
+      // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ГРАФИКОВ
+      function updateAdminCharts(allData) {
+        if (!allData || allData.length === 0) return;
+        
+        // Ограничиваем 50 последними записями
         if (allData.length > 50) allData = allData.slice(-50);
         
+        // Преобразуем timestamp в читаемое время
+        const labels = allData.map(item => {
+          let ts = item.timestamp;
+          // Обработка Firestore Timestamp
+          if (ts?.toDate) ts = ts.toDate().getTime();
+          else if (typeof ts !== 'number') ts = new Date(ts).getTime();
+          
+          return new Date(ts).toLocaleTimeString('ru-RU', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+          });
+        });
+        
+        // Обновляем все графики
         ['temp', 'ph', 'nitrates', 'cod'].forEach(key => {
           const chart = charts[key];
           if (!chart) return;
-          chart.data.labels = allData.map(item => new Date(item.timestamp).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit', second:'2-digit' }));
+          
+          chart.data.labels = labels;
           chart.data.datasets[0].data = allData.map(item => item[key]);
-          chart.update();
+          chart.update('none'); // 'none' — без анимации для производительности
         });
       }
 
@@ -583,7 +597,7 @@
       if (btnStop) btnStop.onclick = stopEmulator;
       if (btnEmulator) btnEmulator.onclick = startEmulator;
 
-      // АВТОРИЗАЦИЯ (исправлено isLogin)
+      // АВТОРИЗАЦИЯ
       let isLogin = true;
       if (authSwitchLink) {
         authSwitchLink.onclick = (e) => {
@@ -645,17 +659,39 @@
         showDashboard();
       });
 
+      // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ ИСТОРИИ
       function loadAdminHistory() {
+        // Отписываемся от предыдущего слушателя
+        if (unsubscribeReadings) {
+          unsubscribeReadings();
+          unsubscribeReadings = null;
+        }
+        
         let query = db.collection('water_readings').orderBy('timestamp', 'desc').limit(50);
-        if (selectedWaterbodyId) query = db.collection('water_readings').where('waterbodyId', '==', selectedWaterbodyId).orderBy('timestamp', 'desc').limit(50);
-        query.onSnapshot(snap => {
+        if (selectedWaterbodyId) {
+          query = db.collection('water_readings')
+            .where('waterbodyId', '==', selectedWaterbodyId)
+            .orderBy('timestamp', 'desc')
+            .limit(50);
+        }
+        
+        // Подписываемся на обновления
+        unsubscribeReadings = query.onSnapshot(snap => {
           const allData = [];
           snap.forEach(doc => allData.push(doc.data()));
+          
+          // Сортируем по времени
           const sortedData = sortByTimestamp([...allData]);
+          
+          // Обновляем таблицу
           const tbody = document.querySelector('#data-table tbody');
           if (tbody) tbody.innerHTML = '';
-          sortedData.forEach(data => updateAdminCharts(data));
           [...allData].reverse().forEach(data => addUserTableRow(data));
+          
+          // ✅ Передаём ВЕСЬ массив в графики
+          updateAdminCharts(sortedData);
+        }, error => {
+          console.error('Ошибка подписки:', error);
         });
       }
 
